@@ -33,8 +33,18 @@ export const createStudent = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Extract departmentId and handle it as a relation
+    const { departmentId, status, ...restData } = data;
+    
     const student = await prisma.student.create({
-      data,
+      data: {
+        ...restData,
+        username: data.matricNo, // Use matricNo as username for manually created students
+        status: (status as any) || 'ACTIVE',
+        department: {
+          connect: { id: departmentId }
+        }
+      },
       include: {
         department: true,
       },
@@ -153,9 +163,24 @@ export const updateStudent = async (req: AuthRequest, res: Response): Promise<vo
     const { id } = req.params;
     const data = studentSchema.partial().parse(req.body);
 
+    // Extract departmentId and status to handle separately
+    const { departmentId, status, ...restData } = data;
+    
+    const updateData: any = { ...restData };
+    
+    if (status) {
+      updateData.status = status as any;
+    }
+    
+    if (departmentId) {
+      updateData.department = {
+        connect: { id: departmentId }
+      };
+    }
+
     const student = await prisma.student.update({
       where: { id: parseInt(id) },
-      data,
+      data: updateData,
       include: {
         department: true,
       },

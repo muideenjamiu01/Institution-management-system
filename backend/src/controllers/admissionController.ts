@@ -34,9 +34,21 @@ export const createApplicant = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    // Generate username from first and last name
+    const baseUsername = `${data.firstName.toLowerCase().replace(/[^a-z]/g, '')}${data.lastName.toLowerCase().replace(/[^a-z]/g, '')}`;
+    let username = baseUsername;
+    let counter = 1;
+
+    // Check if username exists
+    while (await prisma.applicant.findUnique({ where: { username } })) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
     const applicant = await prisma.applicant.create({
       data: {
         ...data,
+        username,
         admissionDecision: {
           create: {
             status: 'PENDING',
@@ -191,9 +203,16 @@ export const makeAdmissionDecision = async (
       return;
     }
 
-    const decision = await prisma.admissionDecision.update({
+    const decision = await prisma.admissionDecision.upsert({
       where: { applicantId: parseInt(id) },
-      data: {
+      create: {
+        applicantId: parseInt(id),
+        status: data.status,
+        decisionDate: new Date(),
+        decisionReason: data.decisionReason,
+        decidedBy: req.user?.email,
+      },
+      update: {
         status: data.status,
         decisionDate: new Date(),
         decisionReason: data.decisionReason,
@@ -267,13 +286,23 @@ export const convertToStudent = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
+    // Validate required fields
+    if (!applicant.dateOfBirth || !applicant.gender || !applicant.address) {
+      res.status(400).json({ 
+        error: 'Applicant must complete profile (dateOfBirth, gender, address) before conversion' 
+      });
+      return;
+    }
+
     const student = await prisma.student.create({
       data: {
+        username: applicant.matricNumber.matricNo, // Use matricNo as username for students
         matricNo: applicant.matricNumber.matricNo,
         firstName: applicant.firstName,
         lastName: applicant.lastName,
         email: applicant.email,
         phone: applicant.phone,
+        password: applicant.password, // Transfer password from applicant
         dateOfBirth: applicant.dateOfBirth,
         gender: applicant.gender,
         address: applicant.address,

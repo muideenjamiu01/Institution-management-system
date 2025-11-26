@@ -33,6 +33,59 @@ enum GradeValue {
   F
 }
 
+enum StudentStatus {
+  ACTIVE
+  SUSPENDED
+  GRADUATED
+  WITHDRAWN
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIALLY_PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PAYSTACK
+  FLUTTERWAVE
+  WALLET
+  CASH
+}
+
+enum InvoiceType {
+  SCHOOL_FEE
+  DEPARTMENTAL_FEE
+  TECHNOLOGY_FEE
+  EXAMINATION_FEE
+  DEVELOPMENT_FEE
+  ACCREDITATION_FEE
+  ACCEPTANCE_FEE
+  OTHER
+}
+
+enum SemesterType {
+  FIRST
+  SECOND
+}
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+  LATE
+}
+
+enum ProgramType {
+  ND          // National Diploma
+  HND         // Higher National Diploma
+  BSC         // Bachelor of Science
+  MSC         // Master of Science
+  PHD         // Doctor of Philosophy
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -48,14 +101,16 @@ model User {
 }
 
 model Department {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  code        String    @unique
-  description String?   @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  code        String       @unique
+  description String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   students    Student[]
   courses     Course[]
+  programs    Program[]
+  applicants  Applicant[]
 
   @@index([code])
   @@map("departments")
@@ -63,23 +118,36 @@ model Department {
 
 model Applicant {
   id                Int                  @id @default(autoincrement())
+  username          String               @unique
   firstName         String
   lastName          String
   email             String               @unique
   phone             String
-  dateOfBirth       DateTime
-  gender            Gender
-  address           String               @db.Text
-  previousSchool    String
-  gradeAverage      Float
+  password          String?
+  dateOfBirth       DateTime?
+  gender            Gender?
+  address           String?              @db.Text
+  previousSchool    String?
+  gradeAverage      Float?
+  programType       ProgramType?         // BSC, MSC, PHD
+  departmentId      Int?
+  programId         Int?
   applicationDate   DateTime             @default(now())
+  refreshToken      String?              @db.Text
+  resetToken        String?
+  resetTokenExpiry  DateTime?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
   admissionDecision AdmissionDecision?
   matricNumber      MatricNumber?
+  department        Department?          @relation(fields: [departmentId], references: [id])
+  program           Program?             @relation(fields: [programId], references: [id])
 
   @@index([email])
+  @@index([username])
   @@index([applicationDate])
+  @@index([departmentId])
+  @@index([programId])
   @@map("applicants")
 }
 
@@ -113,28 +181,48 @@ model MatricNumber {
 
 model Student {
   id                   Int                   @id @default(autoincrement())
+  username             String                @unique
   matricNo             String                @unique
   firstName            String
   lastName             String
   email                String                @unique
+  password             String?
   phone                String
   dateOfBirth          DateTime
   gender               Gender
   address              String                @db.Text
   departmentId         Int
+  programId            Int?
   enrollmentDate       DateTime              @default(now())
   currentLevel         Int                   @default(100)
-  status               String                @default("ACTIVE")
+  currentSessionId     Int?
+  status               StudentStatus         @default(ACTIVE)
+  profilePicture       String?
+  walletBalance        Float                 @default(0)
+  acceptanceFeePaid    Boolean               @default(false)
+  refreshToken         String?               @db.Text
+  resetToken           String?
+  resetTokenExpiry     DateTime?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   department           Department            @relation(fields: [departmentId], references: [id])
+  program              Program?              @relation(fields: [programId], references: [id])
+  currentSession       Session?              @relation(fields: [currentSessionId], references: [id])
   courseRegistrations  CourseRegistration[]
   scores               Score[]
   matricNumberRelation MatricNumber?
+  invoices             Invoice[]
+  payments             Payment[]
+  assignmentSubmissions AssignmentSubmission[]
+  results              Result[]
+  notifications        Notification[]
 
   @@index([matricNo])
+  @@index([username])
   @@index([email])
   @@index([departmentId])
+  @@index([programId])
+  @@index([currentSessionId])
   @@map("students")
 }
 
@@ -147,11 +235,14 @@ model Course {
   departmentId        Int
   level               Int
   semester            Int
+  prerequisite        String?               // course codes required before registration
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   department          Department            @relation(fields: [departmentId], references: [id])
   courseRegistrations CourseRegistration[]
   exams               Exam[]
+  assignments         Assignment[]
+  results             Result[]
 
   @@index([code])
   @@index([departmentId])
@@ -159,20 +250,24 @@ model Course {
 }
 
 model CourseRegistration {
-  id              Int      @id @default(autoincrement())
-  studentId       Int
-  courseId        Int
-  registrationDate DateTime @default(now())
-  academicYear    String
-  semester        Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id               Int       @id @default(autoincrement())
+  studentId        Int
+  courseId         Int
+  semesterId       Int?
+  registrationDate DateTime  @default(now())
+  academicYear     String
+  semester         Int
+  isCarryOver      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course           Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  semesterRecord   Semester? @relation(fields: [semesterId], references: [id])
 
   @@unique([studentId, courseId, academicYear, semester])
   @@index([studentId])
   @@index([courseId])
+  @@index([semesterId])
   @@map("course_registrations")
 }
 
@@ -212,4 +307,203 @@ model Score {
   @@index([studentId])
   @@index([grade])
   @@map("scores")
+}
+
+// New models for Student Portal
+
+model Program {
+  id           Int          @id @default(autoincrement())
+  name         String
+  code         String       @unique
+  departmentId Int
+  duration     Int          // in years
+  description  String?      @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  department   Department   @relation(fields: [departmentId], references: [id])
+  students     Student[]
+  applicants   Applicant[]
+
+  @@index([code])
+  @@index([departmentId])
+  @@map("programs")
+}
+
+model Session {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique // e.g., "2025/2026"
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  semesters   Semester[]
+  students    Student[]
+  invoices    Invoice[]
+  assignments Assignment[]
+  results     Result[]
+
+  @@index([isActive])
+  @@map("sessions")
+}
+
+model Semester {
+  id                  Int                   @id @default(autoincrement())
+  sessionId           Int
+  type                SemesterType
+  startDate           DateTime
+  endDate             DateTime
+  isActive            Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  session             Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  courseRegistrations CourseRegistration[]
+  invoices            Invoice[]
+  assignments         Assignment[]
+
+  @@unique([sessionId, type])
+  @@index([sessionId])
+  @@index([isActive])
+  @@map("semesters")
+}
+
+model Invoice {
+  id             Int         @id @default(autoincrement())
+  invoiceNo      String      @unique
+  studentId      Int
+  sessionId      Int
+  semesterId     Int?
+  type           InvoiceType
+  description    String?
+  amount         Float
+  amountPaid     Float       @default(0)
+  balance        Float
+  level          Int
+  status         PaymentStatus @default(PENDING)
+  dueDate        DateTime?
+  cardPayment    Boolean     @default(true)
+  walletPayment  Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session        Session     @relation(fields: [sessionId], references: [id])
+  semester       Semester?   @relation(fields: [semesterId], references: [id])
+  payments       Payment[]
+
+  @@index([invoiceNo])
+  @@index([studentId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model Payment {
+  id              Int           @id @default(autoincrement())
+  studentId       Int
+  invoiceId       Int
+  amount          Float
+  method          PaymentMethod
+  reference       String        @unique
+  status          PaymentStatus @default(PENDING)
+  gatewayResponse String?       @db.Text
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([reference])
+  @@index([studentId])
+  @@index([invoiceId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Assignment {
+  id          Int                    @id @default(autoincrement())
+  courseId    Int
+  sessionId   Int
+  semesterId  Int
+  title       String
+  description String                 @db.Text
+  dueDate     DateTime
+  maxScore    Float                  @default(100)
+  fileUrl     String?
+  createdBy   String
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  session     Session                @relation(fields: [sessionId], references: [id])
+  semester    Semester               @relation(fields: [semesterId], references: [id])
+  submissions AssignmentSubmission[]
+
+  @@index([courseId])
+  @@index([sessionId])
+  @@index([dueDate])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           Int              @id @default(autoincrement())
+  assignmentId Int
+  studentId    Int
+  fileUrl      String
+  remarks      String?          @db.Text
+  score        Float?
+  status       SubmissionStatus @default(PENDING)
+  submittedAt  DateTime         @default(now())
+  gradedAt     DateTime?
+  gradedBy     String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("assignment_submissions")
+}
+
+model Result {
+  id        Int        @id @default(autoincrement())
+  studentId Int
+  courseId  Int
+  sessionId Int
+  semester  Int
+  score     Float
+  grade     GradeValue
+  gradePoint Float
+  remarks   String?    @db.Text
+  isCarryOver Boolean  @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  student   Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  session   Session    @relation(fields: [sessionId], references: [id])
+
+  @@unique([studentId, courseId, sessionId, semester])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([sessionId])
+  @@index([grade])
+  @@map("results")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  title     String
+  message   String   @db.Text
+  type      String   // INFO, WARNING, SUCCESS, ERROR
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }

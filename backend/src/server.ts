@@ -13,6 +13,10 @@ import studentRoutes from './routes/studentRoutes';
 import courseRoutes from './routes/courseRoutes';
 import examRoutes from './routes/examRoutes';
 import departmentRoutes from './routes/departmentRoutes';
+import studentPortalRoutes from './routes/studentPortalRoutes';
+import applicantAuthRoutes from './routes/applicantAuthRoutes';
+import applicantProfileRoutes from './routes/applicantProfileRoutes';
+import webhookRoutes from './routes/webhookRoutes';
 
 dotenv.config();
 
@@ -41,6 +45,9 @@ app.use('/api/', limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (uploads)
+app.use('/uploads', express.static('uploads'));
+
 // Request logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.url}`);
@@ -59,6 +66,16 @@ app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/departments', departmentRoutes);
+
+// Student Portal Routes
+app.use('/api/student', studentPortalRoutes);
+
+// Applicant Portal Routes
+app.use('/api/applicant/auth', applicantAuthRoutes);
+app.use('/api/applicant', applicantProfileRoutes);
+
+// Webhook Routes (payment gateways)
+app.use('/api/webhooks', webhookRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

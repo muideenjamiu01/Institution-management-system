@@ -4,6 +4,9 @@ import { authenticate, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
+// Public endpoint for applicants to view departments
+router.get('/public', departmentController.getDepartments);
+
 router.post(
   '/',
   authenticate,

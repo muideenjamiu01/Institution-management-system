@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
-import { z } from 'zod';
-import prisma from '../config/database';
-import logger from '../config/logger';
-import { generateResetToken } from '../utils/helpers';
-import { sendPasswordResetEmail } from '../utils/email';
+import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt, { SignOptions } from "jsonwebtoken";
+import { z } from "zod";
+import prisma from "../config/database";
+import logger from "../config/logger";
+import { generateResetToken } from "../utils/helpers";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "../utils/email";
 
 const registerSchema = z.object({
   firstName: z.string().min(1),
@@ -35,8 +35,8 @@ const changePasswordSchema = z.object({
 
 // Generate a random temporary password
 const generateTempPassword = (): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let password = '';
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let password = "";
   for (let i = 0; i < 10; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -44,8 +44,13 @@ const generateTempPassword = (): string => {
 };
 
 // Generate username from firstName and lastName
-const generateUsername = async (firstName: string, lastName: string): Promise<string> => {
-  const baseUsername = `${firstName.toLowerCase().replace(/[^a-z]/g, '')}${lastName.toLowerCase().replace(/[^a-z]/g, '')}`;
+const generateUsername = async (
+  firstName: string,
+  lastName: string
+): Promise<string> => {
+  const baseUsername = `${firstName
+    .toLowerCase()
+    .replace(/[^a-z]/g, "")}${lastName.toLowerCase().replace(/[^a-z]/g, "")}`;
   let username = baseUsername;
   let counter = 1;
 
@@ -58,7 +63,11 @@ const generateUsername = async (firstName: string, lastName: string): Promise<st
   return username;
 };
 
-const generateAccessToken = (applicant: { id: number; email: string; username: string }) => {
+const generateAccessToken = (applicant: {
+  id: number;
+  email: string;
+  username: string;
+}) => {
   return jwt.sign(
     {
       id: applicant.id,
@@ -66,11 +75,15 @@ const generateAccessToken = (applicant: { id: number; email: string; username: s
       username: applicant.username,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: '15m' } as SignOptions
+    { expiresIn: "15m" } as SignOptions
   );
 };
 
-const generateRefreshToken = (applicant: { id: number; email: string; username: string }) => {
+const generateRefreshToken = (applicant: {
+  id: number;
+  email: string;
+  username: string;
+}) => {
   return jwt.sign(
     {
       id: applicant.id,
@@ -78,7 +91,7 @@ const generateRefreshToken = (applicant: { id: number; email: string; username: 
       username: applicant.username,
     },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: '7d' } as SignOptions
+    { expiresIn: "7d" } as SignOptions
   );
 };
 
@@ -94,7 +107,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (existingApplicant) {
       res.status(400).json({
         success: false,
-        message: 'An account with this email already exists',
+        message: "An account with this email already exists",
       });
       return;
     }
@@ -107,7 +120,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (existingPhone) {
       res.status(400).json({
         success: false,
-        message: 'An account with this phone number already exists',
+        message: "An account with this phone number already exists",
       });
       return;
     }
@@ -132,30 +145,41 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    logger.info(`New applicant registered: ${applicant.username} (${applicant.email})`);
+    logger.info(
+      `New applicant registered: ${applicant.username} (${applicant.email})`
+    );
+
+    // Send welcome email with credentials
+    await sendWelcomeEmail(
+      applicant.email,
+      applicant.firstName,
+      username,
+      tempPassword
+    );
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Please save your login credentials.',
+      message: "Registration successful! Please save your login credentials.",
       data: {
         username,
         temporaryPassword: tempPassword,
-        message: 'Please use these credentials to log in and complete your application. You can change your password after logging in.',
+        message:
+          "Please use these credentials to log in and complete your application. You can change your password after logging in.",
       },
     });
   } catch (error: any) {
-    logger.error('Applicant registration error:', error);
+    logger.error("Applicant registration error:", error);
     if (error instanceof z.ZodError) {
       res.status(400).json({
         success: false,
-        message: 'Validation error',
+        message: "Validation error",
         errors: error.errors,
       });
       return;
     }
     res.status(500).json({
       success: false,
-      message: 'Registration failed. Please try again.',
+      message: "Registration failed. Please try again.",
     });
   }
 };
@@ -175,17 +199,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     if (!applicant || !applicant.password) {
       res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       });
       return;
     }
 
-    const isPasswordValid = await bcrypt.compare(data.password, applicant.password);
+    const isPasswordValid = await bcrypt.compare(
+      data.password,
+      applicant.password
+    );
 
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       });
       return;
     }
@@ -203,7 +230,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       data: {
         accessToken,
         refreshToken,
@@ -214,41 +241,47 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           lastName: applicant.lastName,
           email: applicant.email,
           phone: applicant.phone,
-          applicationStatus: applicant.admissionDecision?.status || 'PENDING',
+          applicationStatus: applicant.admissionDecision?.status || "PENDING",
           hasMatricNumber: !!applicant.matricNumber,
         },
       },
     });
   } catch (error: any) {
-    logger.error('Applicant login error:', error);
+    logger.error("Applicant login error:", error);
     if (error instanceof z.ZodError) {
       res.status(400).json({
         success: false,
-        message: 'Validation error',
+        message: "Validation error",
         errors: error.errors,
       });
       return;
     }
     res.status(500).json({
       success: false,
-      message: 'Login failed. Please try again.',
+      message: "Login failed. Please try again.",
     });
   }
 };
 
-export const refreshToken = async (req: Request, res: Response): Promise<void> => {
+export const refreshToken = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
       res.status(401).json({
         success: false,
-        message: 'Refresh token required',
+        message: "Refresh token required",
       });
       return;
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as {
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET!
+    ) as {
       id: number;
       email: string;
       username: string;
@@ -261,7 +294,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     if (!applicant || applicant.refreshToken !== refreshToken) {
       res.status(401).json({
         success: false,
-        message: 'Invalid refresh token',
+        message: "Invalid refresh token",
       });
       return;
     }
@@ -282,10 +315,10 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       },
     });
   } catch (error) {
-    logger.error('Refresh token error:', error);
+    logger.error("Refresh token error:", error);
     res.status(401).json({
       success: false,
-      message: 'Invalid or expired refresh token',
+      message: "Invalid or expired refresh token",
     });
   }
 };
@@ -296,13 +329,15 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     if (!authHeader) {
       res.status(401).json({
         success: false,
-        message: 'No token provided',
+        message: "No token provided",
       });
       return;
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: number;
+    };
 
     await prisma.applicant.update({
       where: { id: decoded.id },
@@ -311,18 +346,21 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       success: true,
-      message: 'Logout successful',
+      message: "Logout successful",
     });
   } catch (error) {
-    logger.error('Logout error:', error);
+    logger.error("Logout error:", error);
     res.status(500).json({
       success: false,
-      message: 'Logout failed',
+      message: "Logout failed",
     });
   }
 };
 
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email } = forgotPasswordSchema.parse(req.body);
 
@@ -334,7 +372,8 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     if (!applicant) {
       res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link will be sent.',
+        message:
+          "If an account exists with this email, a password reset link will be sent.",
       });
       return;
     }
@@ -357,18 +396,22 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     res.json({
       success: true,
-      message: 'If an account exists with this email, a password reset link will be sent.',
+      message:
+        "If an account exists with this email, a password reset link will be sent.",
     });
   } catch (error) {
-    logger.error('Forgot password error:', error);
+    logger.error("Forgot password error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to process request',
+      message: "Failed to process request",
     });
   }
 };
 
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { token, password } = resetPasswordSchema.parse(req.body);
 
@@ -382,7 +425,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     if (!applicant) {
       res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token',
+        message: "Invalid or expired reset token",
       });
       return;
     }
@@ -402,18 +445,21 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
     res.json({
       success: true,
-      message: 'Password reset successful',
+      message: "Password reset successful",
     });
   } catch (error) {
-    logger.error('Reset password error:', error);
+    logger.error("Reset password error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to reset password',
+      message: "Failed to reset password",
     });
   }
 };
 
-export const changePassword = async (req: any, res: Response): Promise<void> => {
+export const changePassword = async (
+  req: any,
+  res: Response
+): Promise<void> => {
   try {
     const data = changePasswordSchema.parse(req.body);
     const applicantId = req.applicant?.id;
@@ -421,7 +467,7 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
     if (!applicantId) {
       res.status(401).json({
         success: false,
-        message: 'Unauthorized',
+        message: "Unauthorized",
       });
       return;
     }
@@ -433,7 +479,7 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
     if (!applicant || !applicant.password) {
       res.status(404).json({
         success: false,
-        message: 'Applicant not found',
+        message: "Applicant not found",
       });
       return;
     }
@@ -446,7 +492,7 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
     if (!isCurrentPasswordValid) {
       res.status(400).json({
         success: false,
-        message: 'Current password is incorrect',
+        message: "Current password is incorrect",
       });
       return;
     }
@@ -462,13 +508,13 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
 
     res.json({
       success: true,
-      message: 'Password changed successfully',
+      message: "Password changed successfully",
     });
   } catch (error) {
-    logger.error('Change password error:', error);
+    logger.error("Change password error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to change password',
+      message: "Failed to change password",
     });
   }
 };

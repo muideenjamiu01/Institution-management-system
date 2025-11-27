@@ -132,6 +132,8 @@ model Applicant {
   programType       ProgramType?         // BSC, MSC, PHD
   departmentId      Int?
   programId         Int?
+  applicationFeePaid Boolean             @default(false)
+  acceptanceFeePaid  Boolean             @default(false)
   applicationDate   DateTime             @default(now())
   refreshToken      String?              @db.Text
   resetToken        String?
@@ -142,6 +144,7 @@ model Applicant {
   matricNumber      MatricNumber?
   department        Department?          @relation(fields: [departmentId], references: [id])
   program           Program?             @relation(fields: [programId], references: [id])
+  payments          ApplicantPayment[]
 
   @@index([email])
   @@index([username])
@@ -177,6 +180,32 @@ model MatricNumber {
 
   @@index([matricNo])
   @@map("matric_numbers")
+}
+
+enum ApplicantPaymentType {
+  APPLICATION_FEE
+  ACCEPTANCE_FEE
+}
+
+model ApplicantPayment {
+  id              Int                   @id @default(autoincrement())
+  applicantId     Int
+  type            ApplicantPaymentType
+  amount          Float
+  method          PaymentMethod
+  reference       String                @unique
+  status          PaymentStatus         @default(PENDING)
+  gatewayResponse String?               @db.Text
+  paidAt          DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  applicant       Applicant             @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@index([reference])
+  @@index([applicantId])
+  @@index([status])
+  @@index([type])
+  @@map("applicant_payments")
 }
 
 model Student {

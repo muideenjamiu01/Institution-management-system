@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '../config/database';
 import { ApplicantAuthRequest } from '../middleware/applicantAuth';
 import { Request } from 'express';
+import { sendApplicationReceivedEmail } from '../utils/email';
 
 // Schema for updating applicant profile/application
 const updateApplicationSchema = z.object({
@@ -350,7 +351,13 @@ export const submitApplication = async (req: ApplicantAuthRequest, res: Response
 
       return updatedApplicant;
     });
-
+    
+  // Send application received email
+    await sendApplicationReceivedEmail(
+      result.email,
+      result.firstName,
+      result.lastName
+    );
     res.json({
       message: 'Application submitted successfully',
       applicant: {

@@ -2,6 +2,25 @@
 
 A complete full-stack web application for managing academic institutions, built with Next.js, Express.js, Prisma, and MySQL.
 
+## 🌟 System Modules
+
+### 1. Admin System (✅ Complete)
+- Staff and Admin management
+- Admission processing and matric number generation
+- Student registration and management
+- Course management
+- Examination and grading system
+- Department management
+
+### 2. Student Portal (🚧 In Progress - 40% Complete)
+- Student authentication with JWT + refresh tokens
+- Course registration with prerequisite validation
+- Payment system (Paystack & Flutterwave integration)
+- Assignment submission system
+- Results viewing and transcript generation
+- Wallet system for payments
+- Document generation (admission letters, ID cards, receipts)
+
 ## 🚀 Features
 
 - **Authentication & Authorization**: JWT-based auth with role-based access control (Admin/Staff)

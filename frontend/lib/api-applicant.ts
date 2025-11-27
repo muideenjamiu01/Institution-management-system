@@ -278,3 +278,26 @@ export const getApplicationStatusText = (status: string) => {
       return status;
   }
 };
+
+// ===== Payment API =====
+export const paymentApi = {
+  initializeApplicationFee: async (method: 'PAYSTACK' | 'FLUTTERWAVE') => {
+    const response = await applicantApi.post('/payment/application-fee/initialize', { method });
+    return response.data;
+  },
+
+  initializeAcceptanceFee: async (method: 'PAYSTACK' | 'FLUTTERWAVE') => {
+    const response = await applicantApi.post('/payment/acceptance-fee/initialize', { method });
+    return response.data;
+  },
+
+  verifyPayment: async (reference: string) => {
+    const response = await applicantApi.get(`/payment/verify/${reference}`);
+    return response.data;
+  },
+
+  getPaymentHistory: async () => {
+    const response = await applicantApi.get('/payment/history');
+    return response.data;
+  },
+};

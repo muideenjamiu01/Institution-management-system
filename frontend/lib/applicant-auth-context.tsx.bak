@@ -26,8 +26,6 @@ interface Applicant {
   applicationStatus: string;
   hasMatricNumber: boolean;
   matricNo?: string | null;
-  applicationFeePaid?: boolean;
-  acceptanceFeePaid?: boolean;
 }
 
 interface AuthContextType {

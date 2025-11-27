@@ -189,7 +189,7 @@ export default function ApplicationFormPage() {
       toast({
         title: "Application Submitted!",
         description:
-          "Redirecting to payment...",
+          "Your application has been submitted successfully and is under review.",
       });
     } catch (error: any) {
     console.log(error);

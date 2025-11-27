@@ -335,25 +335,31 @@ export default function ApplicantDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Only show payment card when admission is approved */}
-        {isApproved && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="mr-2 h-5 w-5 text-purple-600" />
-                Payment
-              </CardTitle>
-              <CardDescription>
-                Pay your acceptance fee
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/applicant/payment">Make Payment</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="mr-2 h-5 w-5 text-purple-600" />
+              Payment
+            </CardTitle>
+            <CardDescription>
+              {isApproved
+                ? "Pay your acceptance fee"
+                : "Payment pending approval"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full"
+              disabled={!isApproved}
+            >
+              <Link href="/applicant/payment">
+                {isApproved ? "Make Payment" : "Not Available Yet"}
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Account Information */}

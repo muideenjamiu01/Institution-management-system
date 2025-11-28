@@ -243,6 +243,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           phone: applicant.phone,
           applicationStatus: applicant.admissionDecision?.status || "PENDING",
           hasMatricNumber: !!applicant.matricNumber,
+          matricNo: applicant.matricNumber?.matricNo || null,
+          applicationFeePaid: applicant.applicationFeePaid,
+          acceptanceFeePaid: applicant.acceptanceFeePaid,
         },
       },
     });

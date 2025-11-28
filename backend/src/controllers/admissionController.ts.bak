@@ -4,7 +4,6 @@ import prisma from '../config/database';
 import logger from '../config/logger';
 import { AuthRequest } from '../middleware/auth';
 import { sendAdmissionApprovalEmail } from '../utils/email';
-
 const applicantSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -221,17 +220,36 @@ export const makeAdmissionDecision = async (
       },
     });
 
-      // If approved, send approval email (matric number will be generated after acceptance fee payment)
+    // If approved, generate matric number
     if (data.status === 'APPROVED') {
-      try {
-        await sendAdmissionApprovalEmail(
-          applicant.email,
-          `${applicant.firstName} ${applicant.lastName}`
-        );
-      } catch (emailError) {
-        logger.error('Failed to send admission approval email:', emailError);
-        // Continue even if email fails
+      const existingMatricNumber = await prisma.matricNumber.findUnique({
+        where: { applicantId: parseInt(id) },
+      });
+
+      if (!existingMatricNumber) {
+        const year = new Date().getFullYear();
+        const count = await prisma.matricNumber.count();
+        const matricNo = `IMS/${year}/${String(count + 1).padStart(5, '0')}`;
+
+        await prisma.matricNumber.create({
+          data: {
+            applicantId: parseInt(id),
+            matricNo,
+          },
+        });
       }
+    }
+
+    // Send approval email
+    try {
+      await sendAdmissionApprovalEmail(
+        applicant.email,
+        `${applicant.firstName} ${applicant.lastName}`,
+        matricNo
+      );
+    } catch (emailError) {
+      logger.error('Failed to send admission approval email:', emailError);
+      // Continue even if email fails
     }
 
     logger.info(`Admission decision made for applicant ${id}: ${data.status}`);

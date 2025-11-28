@@ -37,7 +37,7 @@ export const sendEmail = async (options: SendEmailOptions) => {
 };
 
 export const sendPasswordResetEmail = async (email: string, resetToken: string) => {
-  const resetUrl = `${process.env.STUDENT_PORTAL_URL}/reset-password?token=${resetToken}`;
+  const resetUrl = `${process.env.STUDENT_PORTAL_URL}/applicant/reset-password?token=${resetToken}`;
   
   const html = `
     <!DOCTYPE html>
@@ -209,8 +209,7 @@ export const sendWelcomeEmail = async (
 
 export const sendAdmissionApprovalEmail = async (
   email: string,
-  name: string,
-  matricNo: string
+  name: string
 ) => {
   const html = `
     <!DOCTYPE html>
@@ -221,18 +220,18 @@ export const sendAdmissionApprovalEmail = async (
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
           .header { background-color: #10B981; color: white; padding: 20px; text-align: center; }
           .content { padding: 20px; background-color: #f9fafb; }
-          .matric-box {
-            background-color: #EFF6FF;
-            border: 2px solid #3B82F6;
+          .highlight-box {
+            background-color: #FEF3C7;
+            border: 2px solid #F59E0B;
             padding: 15px;
             margin: 20px 0;
             text-align: center;
             border-radius: 8px;
           }
-          .matric-number {
-            font-size: 24px;
+          .amount {
+            font-size: 28px;
             font-weight: bold;
-            color: #1E40AF;
+            color: #92400E;
           }
           .button { 
             display: inline-block; 
@@ -255,20 +254,23 @@ export const sendAdmissionApprovalEmail = async (
             <p>Dear ${name},</p>
             <p>We are pleased to inform you that your admission application has been <strong>APPROVED</strong>!</p>
             
-            <div class="matric-box">
-              <p style="margin: 0; font-size: 14px; color: #666;">Your Matriculation Number:</p>
-              <p class="matric-number">${matricNo}</p>
+            <div class="highlight-box">
+              <p style="margin: 0; font-size: 16px; color: #92400E;">🎓 Next Step: Complete Your Admission</p>
+              <p class="amount">Pay Acceptance Fee: ₦50,000</p>
             </div>
+
+            <p><strong>Important:</strong> To claim your admission and receive your matriculation number, you must pay the acceptance fee.</p>
 
             <p><strong>Next Steps:</strong></p>
             <ol>
+              <li>Log in to your applicant portal</li>
               <li>Pay your acceptance fee (₦50,000)</li>
+              <li>Receive your matriculation number</li>
               <li>Complete your student registration</li>
-              <li>Access the Student Portal with your credentials</li>
             </ol>
 
             <center>
-              <a href="${process.env.APPLICANT_PORTAL_URL}/applicant/login" class="button">Access Applicant Portal</a>
+              <a href="${process.env.APPLICANT_PORTAL_URL}/applicant/login" class="button">Pay Acceptance Fee</a>
             </center>
 
             <p>Welcome to our institution! We look forward to your academic journey with us.</p>
@@ -283,9 +285,9 @@ export const sendAdmissionApprovalEmail = async (
 
   return sendEmail({
     to: email,
-    subject: 'Admission Approved - IMS',
+    subject: 'Admission Approved - Pay Acceptance Fee',
     html,
-    text: `Congratulations! Your admission has been approved. Your matriculation number is: ${matricNo}`,
+    text: `Congratulations! Your admission has been approved. Please pay the acceptance fee of ₦50,000 to claim your admission and receive your matriculation number.`,
   });
 };
 
@@ -294,8 +296,11 @@ export const sendPaymentReceiptEmail = async (
   name: string,
   invoiceNo: string,
   amount: number,
-  receiptUrl: string
+  receiptUrl: string,
+  matricNo?: string
 ) => {
+  const isAcceptanceFee = amount === 50000 && matricNo;
+  
   const html = `
     <!DOCTYPE html>
     <html>
@@ -311,6 +316,20 @@ export const sendPaymentReceiptEmail = async (
             color: #10B981; 
             text-align: center;
             margin: 20px 0;
+          }
+          .matric-box {
+            background-color: #DBEAFE;
+            border: 2px solid #3B82F6;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            border-radius: 8px;
+          }
+          .matric-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1E40AF;
+            font-family: monospace;
           }
           .button { 
             display: inline-block; 
@@ -342,6 +361,26 @@ export const sendPaymentReceiptEmail = async (
               <li>Date: ${new Date().toLocaleDateString()}</li>
             </ul>
 
+            ${isAcceptanceFee ? `
+            <div class="matric-box">
+              <p style="margin: 0; font-size: 14px; color: #1E40AF; margin-bottom: 10px;">🎓 Your Matriculation Number</p>
+              <p class="matric-number">${matricNo}</p>
+            </div>
+            
+            <p style="background-color: #D1FAE5; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981;">
+              <strong>🎉 Congratulations!</strong><br/>
+              Your admission is now confirmed. Please save your matriculation number as you will need it for all future transactions.
+            </p>
+            
+            <p><strong>Next Steps:</strong></p>
+            <ol>
+              <li>Access the Student Portal with your credentials</li>
+              <li>Complete your student profile</li>
+              <li>Register for courses</li>
+              <li>Begin your academic journey!</li>
+            </ol>
+            ` : ''}
+
             <center>
               <a href="${receiptUrl}" class="button">Download Receipt</a>
             </center>
@@ -358,9 +397,11 @@ export const sendPaymentReceiptEmail = async (
 
   return sendEmail({
     to: email,
-    subject: `Payment Receipt - ${invoiceNo}`,
+    subject: isAcceptanceFee ? `Payment Receipt - Admission Confirmed (${matricNo})` : `Payment Receipt - ${invoiceNo}`,
     html,
-    text: `Payment successful: ₦${amount.toLocaleString()} for invoice ${invoiceNo}`,
+    text: isAcceptanceFee 
+      ? `Payment successful: ₦${amount.toLocaleString()} for invoice ${invoiceNo}. Your matriculation number is: ${matricNo}` 
+      : `Payment successful: ₦${amount.toLocaleString()} for invoice ${invoiceNo}`,
   });
 };
 

@@ -17,6 +17,7 @@ import studentPortalRoutes from './routes/studentPortalRoutes';
 import applicantAuthRoutes from './routes/applicantAuthRoutes';
 import applicantProfileRoutes from './routes/applicantProfileRoutes';
 import webhookRoutes from './routes/webhookRoutes';
+import applicantPaymentRoutes from './routes/applicantPaymentRoutes';
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ app.use('/api/student', studentPortalRoutes);
 // Applicant Portal Routes
 app.use('/api/applicant/auth', applicantAuthRoutes);
 app.use('/api/applicant', applicantProfileRoutes);
+app.use('/api/applicant/payment', applicantPaymentRoutes);
 
 // Webhook Routes (payment gateways)
 app.use('/api/webhooks', webhookRoutes);

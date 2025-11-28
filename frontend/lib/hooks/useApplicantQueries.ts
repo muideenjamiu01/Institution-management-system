@@ -94,8 +94,14 @@ export const useInitializeApplicationFee = () => {
       paymentApi.initializeApplicationFee(method),
     onSuccess: (data) => {
       // Redirect to payment gateway
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+      if (data.data?.authorizationUrl) {
+        window.location.href = data.data.authorizationUrl;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Payment URL not received from gateway',
+          variant: 'destructive',
+        });
       }
     },
     onError: (error: any) => {
@@ -116,8 +122,14 @@ export const useInitializeAcceptanceFee = () => {
       paymentApi.initializeAcceptanceFee(method),
     onSuccess: (data) => {
       // Redirect to payment gateway
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+      if (data.data?.authorizationUrl) {
+        window.location.href = data.data.authorizationUrl;
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Payment URL not received from gateway',
+          variant: 'destructive',
+        });
       }
     },
     onError: (error: any) => {

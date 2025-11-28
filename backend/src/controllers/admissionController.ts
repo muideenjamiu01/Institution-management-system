@@ -35,16 +35,17 @@ export const createApplicant = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    // Generate username from first and last name
-    const baseUsername = `${data.firstName.toLowerCase().replace(/[^a-z]/g, '')}${data.lastName.toLowerCase().replace(/[^a-z]/g, '')}`;
-    let username = baseUsername;
-    let counter = 1;
-
-    // Check if username exists
-    while (await prisma.applicant.findUnique({ where: { username } })) {
-      username = `${baseUsername}${counter}`;
-      counter++;
-    }
+    // Generate username in format IMS2025-00456
+    const currentYear = new Date().getFullYear();
+    
+    // Get the last applicant to determine the next number
+    const lastApplicant = await prisma.applicant.findFirst({
+      orderBy: { id: 'desc' },
+      select: { id: true },
+    });
+    
+    const nextNumber = (lastApplicant?.id || 0) + 1;
+    const username = `IMS${currentYear}-${String(nextNumber).padStart(5, '0')}`;
 
     const applicant = await prisma.applicant.create({
       data: {

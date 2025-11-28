@@ -37,11 +37,14 @@ export default function ApplicantDashboardPage() {
 
   if (!applicant) return null;
 
+  // Use profile data if available, otherwise fall back to auth context
+  const currentProfile = profileData?.data || applicant;
+
   const hasCompletedProfile =
-    applicant.dateOfBirth && applicant.gender && applicant.address;
-  const isApproved = applicant.applicationStatus === "APPROVED";
-  const isPending = applicant.applicationStatus === "PENDING";
-  const isRejected = applicant.applicationStatus === "REJECTED";
+    currentProfile.dateOfBirth && currentProfile.gender && currentProfile.address;
+  const isApproved = currentProfile.applicationStatus === "APPROVED";
+  const isPending = currentProfile.applicationStatus === "PENDING";
+  const isRejected = currentProfile.applicationStatus === "REJECTED";
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -61,7 +64,7 @@ export default function ApplicantDashboardPage() {
     }
     if (step === 4) {
       if (!isApproved) return "pending";
-      if (applicant.hasMatricNumber) return "completed";
+      if (currentProfile.hasMatricNumber) return "completed";
       return "current";
     }
     return "pending";
@@ -100,7 +103,7 @@ export default function ApplicantDashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          {getGreeting()}, {applicant.firstName}!
+          {getGreeting()}, {currentProfile.firstName}!
         </h1>
         <p className="text-gray-600 mt-1 text-sm sm:text-base">
           Welcome to your application dashboard. Track your admission progress
@@ -121,10 +124,10 @@ export default function ApplicantDashboardPage() {
             <div className="flex items-center gap-2">
               <Badge
                 className={getApplicationStatusColor(
-                  applicant.applicationStatus
+                  currentProfile.applicationStatus
                 )}
               >
-                {getApplicationStatusText(applicant.applicationStatus)}
+                {getApplicationStatusText(currentProfile.applicationStatus)}
               </Badge>
               <Button
                 variant="outline"
@@ -196,11 +199,11 @@ export default function ApplicantDashboardPage() {
                 </p>
                 <p className="text-sm text-green-700 mt-1">
                   Your application has been approved.
-                  {applicant.hasMatricNumber
+                  {currentProfile.hasMatricNumber
                     ? " You have been assigned a matriculation number."
                     : " Please pay your acceptance fee to secure your admission and receive your matriculation number."}
                 </p>
-                {applicant.hasMatricNumber && applicant.matricNo && (
+                {currentProfile.hasMatricNumber && currentProfile.matricNo && (
                   <div className="mt-3 p-3 bg-white border border-green-300 rounded-md">
                     <div className="flex items-center space-x-2">
                       <IdCard className="h-5 w-5 text-green-600" />
@@ -209,7 +212,7 @@ export default function ApplicantDashboardPage() {
                           Your Matric Number
                         </p>
                         <p className="text-lg font-bold text-green-900 font-mono">
-                          {applicant.matricNo}
+                          {currentProfile.matricNo}
                         </p>
                       </div>
                     </div>
@@ -359,23 +362,23 @@ export default function ApplicantDashboardPage() {
             <div>
               <dt className="text-sm font-medium text-gray-500">Username</dt>
               <dd className="mt-1 text-sm text-gray-900 font-mono">
-                {applicant.username}
+                {currentProfile.username}
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Email</dt>
-              <dd className="mt-1 text-sm text-gray-900">{applicant.email}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{currentProfile.email}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Phone</dt>
-              <dd className="mt-1 text-sm text-gray-900">{applicant.phone}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{currentProfile.phone}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">
                 Application Date
               </dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {new Date().toLocaleDateString("en-US", {
+                {new Date(currentProfile.createdAt || new Date()).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

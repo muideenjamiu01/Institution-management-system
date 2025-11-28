@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useStudentAuth } from '@/lib/student-auth-context';
-import { dashboardApi, formatCurrency } from '@/lib/api-student';
+import {
+  useDashboardStats,
+  useDashboardActivities,
+  useDashboardNotifications,
+  useStudentProfile,
+} from '@/lib/hooks/useStudentQueries';
+import { formatCurrency } from '@/lib/api-student';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,62 +19,29 @@ import {
   CheckCircle2,
   AlertCircle,
   Bell,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatRelativeTime } from '@/lib/api-student';
 
-interface DashboardStats {
-  totalCourses: number;
-  pendingAssignments: number;
-  currentGPA: number;
-  pendingPayments: number;
-  walletBalance: number;
-}
-
-interface Activity {
-  id: number;
-  type: string;
-  message: string;
-  createdAt: string;
-}
-
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  type: string;
-  isRead: boolean;
-  createdAt: string;
-}
-
 export default function StudentDashboard() {
   const { student } = useStudentAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: profileData, refetch: refetchProfile } = useStudentProfile();
+  const { data: statsData, refetch: refetchStats, isRefetching: isRefetchingStats } = useDashboardStats();
+  const { data: activitiesData, refetch: refetchActivities } = useDashboardActivities();
+  const { data: notificationsData, refetch: refetchNotifications } = useDashboardNotifications();
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // Use profile data if available, otherwise fall back to auth context
+  const currentStudent = profileData?.data || student;
+  const stats = statsData?.data;
+  const activities = activitiesData?.data || [];
+  const notifications = (notificationsData?.data || []).slice(0, 5);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [statsRes, activitiesRes, notificationsRes] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getRecentActivities(),
-        dashboardApi.getNotifications(),
-      ]);
-
-      setStats(statsRes.data);
-      setActivities(activitiesRes.data);
-      setNotifications(notificationsRes.data.slice(0, 5));
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleRefresh = () => {
+    refetchProfile();
+    refetchStats();
+    refetchActivities();
+    refetchNotifications();
   };
 
   const getGreeting = () => {
@@ -79,30 +51,35 @@ export default function StudentDashboard() {
     return 'Good Evening';
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  if (!currentStudent) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          {getGreeting()}, {student?.firstName}!
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Here's what's happening with your academics today
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {getGreeting()}, {currentStudent?.firstName}!
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+            Here's what's happening with your academics today
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefetchingStats}
+          title="Refresh dashboard"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefetchingStats ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Registered Courses</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -115,7 +92,7 @@ export default function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Pending Assignments</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -128,7 +105,7 @@ export default function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Current GPA</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -143,7 +120,7 @@ export default function StudentDashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -159,16 +136,16 @@ export default function StudentDashboard() {
       </div>
 
       {/* Quick Actions & Notifications */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
         {/* Recent Activities */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">Recent Activities</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-semibold">Recent Activities</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {activities.length > 0 ? (
-                activities.map((activity) => (
+                activities.map((activity: any) => (
                   <div key={activity.id} className="flex items-start space-x-3">
                     <div className="mt-1">
                       {activity.type === 'ASSIGNMENT' && (
@@ -207,7 +184,7 @@ export default function StudentDashboard() {
         {/* Notifications */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold flex items-center">
+            <CardTitle className="text-base sm:text-lg font-semibold flex items-center">
               <Bell className="h-5 w-5 mr-2" />
               Notifications
             </CardTitle>
@@ -215,7 +192,7 @@ export default function StudentDashboard() {
           <CardContent>
             <div className="space-y-4">
               {notifications.length > 0 ? (
-                notifications.map((notification) => (
+                notifications.map((notification: any) => (
                   <div
                     key={notification.id}
                     className={`flex items-start space-x-3 p-3 rounded-lg ${
@@ -263,32 +240,32 @@ export default function StudentDashboard() {
       {/* Quick Links */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Quick Links</CardTitle>
+          <CardTitle className="text-base sm:text-lg font-semibold">Quick Links</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <Button variant="outline" className="h-auto py-4 flex-col" asChild>
               <Link href="/student/courses">
-                <BookOpen className="h-6 w-6 mb-2" />
-                <span className="text-sm">Register Courses</span>
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 mb-2" />
+                <span className="text-xs sm:text-sm">Register Courses</span>
               </Link>
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col" asChild>
               <Link href="/student/assignments">
-                <ClipboardList className="h-6 w-6 mb-2" />
-                <span className="text-sm">View Assignments</span>
+                <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 mb-2" />
+                <span className="text-xs sm:text-sm">View Assignments</span>
               </Link>
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col" asChild>
               <Link href="/student/payments">
-                <CreditCard className="h-6 w-6 mb-2" />
-                <span className="text-sm">Make Payment</span>
+                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 mb-2" />
+                <span className="text-xs sm:text-sm">Make Payment</span>
               </Link>
             </Button>
             <Button variant="outline" className="h-auto py-4 flex-col" asChild>
               <Link href="/student/results">
-                <TrendingUp className="h-6 w-6 mb-2" />
-                <span className="text-sm">Check Results</span>
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 mb-2" />
+                <span className="text-xs sm:text-sm">Check Results</span>
               </Link>
             </Button>
           </div>

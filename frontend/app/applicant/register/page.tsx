@@ -167,7 +167,7 @@ export default function ApplicantRegisterPage() {
         </Card>
 
         <div className="absolute bottom-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 Institutional Management System. All rights reserved.</p>
+          <p>© 2025 IMS by 2024/2025 Computer Science Conversion Students. All rights reserved.</p>
         </div>
       </div>
     );
@@ -196,7 +196,7 @@ export default function ApplicantRegisterPage() {
               </Alert>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
                 <Input
@@ -281,8 +281,8 @@ export default function ApplicantRegisterPage() {
         </form>
       </Card>
 
-      <div className="absolute bottom-4 text-center text-sm text-muted-foreground">
-        <p>© 2025 Institutional Management System. All rights reserved.</p>
+      <div className="absolute bottom-4 text-center text-xs md:text-sm text-muted-foreground">
+        <p>© 2025 IMS by 2024/2025 Computer Science Conversion Students. All rights reserved.</p>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
 import { useApplicantAuth } from "@/lib/applicant-auth-context";
+import { useApplicantProfile } from "@/lib/hooks/useApplicantQueries";
 import {
   Card,
   CardContent,
@@ -21,26 +22,17 @@ import {
   CreditCard,
   IdCard,
 } from "lucide-react";
-import Link from "next/link";
 import {
   getApplicationStatusColor,
   getApplicationStatusText,
 } from "@/lib/api-applicant";
 
 export default function ApplicantDashboardPage() {
-  const { applicant, refreshProfile } = useApplicantAuth();
+  const { applicant } = useApplicantAuth();
+  const { data: profileData, refetch, isRefetching } = useApplicantProfile();
 
-  // Refresh profile data after a short delay to avoid race conditions
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshProfile();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleRefresh = async () => {
-    await refreshProfile();
+  const handleRefresh = () => {
+    refetch();
   };
 
   if (!applicant) return null;
@@ -104,13 +96,13 @@ export default function ApplicantDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
           {getGreeting()}, {applicant.firstName}!
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">
           Welcome to your application dashboard. Track your admission progress
           here.
         </p>
@@ -119,9 +111,9 @@ export default function ApplicantDashboardPage() {
       {/* Application Status Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <div>
-              <CardTitle>Application Status</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Application Status</CardTitle>
               <CardDescription>
                 Your current admission application status
               </CardDescription>
@@ -138,6 +130,7 @@ export default function ApplicantDashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
+                disabled={isRefetching}
                 title="Refresh status"
               >
                 <svg
@@ -159,7 +152,7 @@ export default function ApplicantDashboardPage() {
         </CardHeader>
         <CardContent>
           {isPending && hasCompletedProfile && (
-            <div className="flex items-start space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:space-x-3 space-y-2 sm:space-y-0 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div>
                 <p className="font-medium text-yellow-900">
@@ -175,7 +168,7 @@ export default function ApplicantDashboardPage() {
           )}
 
           {isPending && !hasCompletedProfile && (
-            <div className="flex items-start space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:space-x-3 space-y-2 sm:space-y-0 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
               <div>
                 <p className="font-medium text-blue-900">
@@ -195,7 +188,7 @@ export default function ApplicantDashboardPage() {
           )}
 
           {isApproved && (
-            <div className="flex items-start space-x-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:space-x-3 space-y-2 sm:space-y-0 p-4 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-medium text-green-900">
@@ -227,7 +220,7 @@ export default function ApplicantDashboardPage() {
           )}
 
           {isRejected && (
-            <div className="flex items-start space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:space-x-3 space-y-2 sm:space-y-0 p-4 bg-red-50 border border-red-200 rounded-lg">
               <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
               <div>
                 <p className="font-medium text-red-900">
@@ -264,7 +257,7 @@ export default function ApplicantDashboardPage() {
                     }`}
                   />
                 )}
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start space-x-3 sm:space-x-4">
                   <div
                     className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                       step.status === "completed"

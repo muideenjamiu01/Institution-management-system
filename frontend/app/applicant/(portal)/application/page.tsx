@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useApplicantAuth } from "@/lib/applicant-auth-context";
+import { useSubmitApplication } from "@/lib/hooks/useApplicantQueries";
 import { applicationApi } from "@/lib/api-applicant";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ const PROGRAM_TYPE_LABELS: Record<string, string> = {
 export default function ApplicationFormPage() {
   const { applicant, updateApplicant } = useApplicantAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const submitApplication = useSubmitApplication();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -158,50 +159,36 @@ export default function ApplicationFormPage() {
     }
   }, [applicant]);
 
-  const onSubmit = async (data: ApplicationForm) => {
-    try {
-      setIsLoading(true);
-
-      const response = await applicationApi.submitApplication({
-        phone: applicant?.phone || "",
-        dateOfBirth: data.dateOfBirth,
-        gender: data.gender,
-        address: data.address,
-        previousSchool: data.previousSchool,
-        gradeAverage: data.gradeAverage,
-        programType: data.programType,
-        departmentId: data.departmentId,
-        programId: data.programId,
-      });
-
-      // Update local state with the returned applicant data
-      if (applicant && response.applicant) {
-        updateApplicant({
-          ...applicant,
-          ...response.applicant,
-        });
-      }
-      if (response.message === "Application submitted successfully") {
-        router.push("/applicant/payment");
-      }
-      setIsSubmitted(true);
-
-      toast({
-        title: "Application Submitted!",
-        description:
-          "Redirecting to payment...",
-      });
-    } catch (error: any) {
-    console.log(error);
-      toast({
-        title: "Submission Failed",
-        description:
-          error.response.data.message || "Failed to submit application. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit = (data: ApplicationForm) => {
+    submitApplication.mutate({
+      phone: applicant?.phone || "",
+      dateOfBirth: data.dateOfBirth,
+      gender: data.gender,
+      address: data.address,
+      previousSchool: data.previousSchool,
+      gradeAverage: data.gradeAverage,
+      programType: data.programType,
+      departmentId: data.departmentId,
+      programId: data.programId,
+    }, {
+      onSuccess: (response) => {
+        // Update local state with the returned applicant data
+        if (applicant && response.applicant) {
+          updateApplicant({
+            ...applicant,
+            ...response.applicant,
+          });
+        }
+        if (response.message === "Application submitted successfully") {
+          setIsSubmitted(true);
+          toast({
+            title: "Application Submitted!",
+            description: "Redirecting to payment...",
+          });
+          router.push("/applicant/payment");
+        }
+      },
+    });
   };
 
   if (!applicant) return null;
@@ -231,7 +218,7 @@ export default function ApplicationFormPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Admission Application Form</CardTitle>
+          <CardTitle className="text-xl md:text-2xl xl:text-3xl">Admission Application Form</CardTitle>
           <CardDescription>
             Provide your personal and academic information
           </CardDescription>
@@ -240,9 +227,9 @@ export default function ApplicationFormPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Personal Information</h3>
+              <h3 className="text-lg font-semibold">Academic Information</h3>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>First Name</Label>
                   <Input
@@ -261,7 +248,7 @@ export default function ApplicationFormPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input
@@ -280,7 +267,7 @@ export default function ApplicationFormPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">Date of Birth *</Label>
                   <Input
@@ -503,9 +490,9 @@ export default function ApplicationFormPage() {
             </div>
 
             {!isSubmitted && (
-              <div className="flex justify-end space-x-4">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? (
+              <div className="flex justify-end">
+                <Button type="submit" disabled={submitApplication.isPending} className="w-full sm:w-auto">
+                  {submitApplication.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Submitting...

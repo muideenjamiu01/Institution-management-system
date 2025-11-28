@@ -1,73 +1,95 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, GraduationCap, BookOpen, ClipboardCheck } from 'lucide-react';
 import api from '@/lib/api';
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    students: 0,
-    applicants: 0,
-    courses: 0,
-    exams: 0,
+// Dashboard query hook
+const useDashboardStats = () => {
+  return useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const [studentsRes, summaryRes, coursesRes, examsRes] = await Promise.all([
+        api.get('/students?limit=1'),
+        api.get('/admissions/summary'),
+        api.get('/courses?limit=1'),
+        api.get('/exams?limit=1'),
+      ]);
+
+      return {
+        students: studentsRes.data.pagination?.total || 0,
+        applicants: summaryRes.data?.totalApplicants || 0,
+        approved: summaryRes.data?.approved || 0,
+        rejected: summaryRes.data?.rejected || 0,
+        pending: summaryRes.data?.pending || 0,
+        courses: coursesRes.data.pagination?.total || 0,
+        exams: examsRes.data.pagination?.total || 0,
+      };
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnWindowFocus: true,
+    retry: 2,
   });
-  const [loading, setLoading] = useState(true);
+};
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [studentsRes, applicantsRes, coursesRes, examsRes] = await Promise.all([
-          api.get('/students?limit=1'),
-          api.get('/admissions/applicants?limit=1'),
-          api.get('/courses?limit=1'),
-          api.get('/exams?limit=1'),
-        ]);
-
-        setStats({
-          students: studentsRes.data.pagination?.total || 0,
-          applicants: applicantsRes.data.pagination?.total || 0,
-          courses: coursesRes.data.pagination?.total || 0,
-          exams: examsRes.data.pagination?.total || 0,
-        });
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+export default function DashboardPage() {
+  const { data: stats, isLoading, refetch } = useDashboardStats();
 
   const statCards = [
     {
       title: 'Total Students',
-      value: stats.students,
+      value: stats?.students || 0,
       icon: Users,
       description: 'Enrolled students',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
-      title: 'Applicants',
-      value: stats.applicants,
+      title: 'Total Applicants',
+      value: stats?.applicants || 0,
       icon: ClipboardCheck,
-      description: 'Pending applications',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Courses',
-      value: stats.courses,
-      icon: BookOpen,
-      description: 'Active courses',
+      description: 'All applications',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
     {
+      title: 'Approved',
+      value: stats?.approved || 0,
+      icon: ClipboardCheck,
+      description: 'Approved applicants',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+    },
+    {
+      title: 'Pending',
+      value: stats?.pending || 0,
+      icon: ClipboardCheck,
+      description: 'Awaiting decision',
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+    },
+    {
+      title: 'Rejected',
+      value: stats?.rejected || 0,
+      icon: ClipboardCheck,
+      description: 'Rejected applications',
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+    },
+    {
+      title: 'Courses',
+      value: stats?.courses || 0,
+      icon: BookOpen,
+      description: 'Active courses',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+    },
+    {
       title: 'Exams',
-      value: stats.exams,
+      value: stats?.exams || 0,
       icon: GraduationCap,
       description: 'Scheduled exams',
       color: 'text-orange-600',
@@ -75,7 +97,7 @@ export default function DashboardPage() {
     },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -94,7 +116,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card key={stat.title}>
+          <Card key={stat.title} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => refetch()}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
               <div className={`p-2 rounded-lg ${stat.bgColor}`}>

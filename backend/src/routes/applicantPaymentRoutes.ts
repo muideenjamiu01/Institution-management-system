@@ -9,6 +9,15 @@ import {
 
 const router = express.Router();
 
+// Auth check endpoint (for debugging)
+router.get('/auth-check', applicantAuth, (req: any, res) => {
+  res.json({
+    success: true,
+    message: 'Authenticated',
+    applicant: req.applicant,
+  });
+});
+
 router.use(applicantAuth);
 
 router.post('/application-fee/initialize', initializeApplicationFee);

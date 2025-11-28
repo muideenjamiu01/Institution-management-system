@@ -98,6 +98,20 @@ export const getApplicants = async (req: AuthRequest, res: Response): Promise<vo
         include: {
           admissionDecision: true,
           matricNumber: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          program: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
         },
         skip,
         take: limit,
@@ -129,6 +143,8 @@ export const getApplicantById = async (req: AuthRequest, res: Response): Promise
       where: { id: parseInt(id) },
       include: {
         admissionDecision: true,
+        department: true,
+        program: true,
         matricNumber: {
           include: {
             student: true,
@@ -317,5 +333,150 @@ export const convertToStudent = async (req: AuthRequest, res: Response): Promise
   } catch (error) {
     logger.error('Convert to student error:', error);
     res.status(500).json({ error: 'Failed to convert applicant to student' });
+  }
+};
+
+export const bulkApprove = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { applicantIds } = req.body;
+
+    if (!applicantIds || !Array.isArray(applicantIds) || applicantIds.length === 0) {
+      res.status(400).json({ error: 'Applicant IDs array is required' });
+      return;
+    }
+
+    const updates = applicantIds.map((id: number) =>
+      prisma.admissionDecision.upsert({
+        where: { applicantId: id },
+        create: {
+          applicantId: id,
+          status: 'APPROVED',
+          decisionDate: new Date(),
+          decidedBy: req.user?.email,
+        },
+        update: {
+          status: 'APPROVED',
+          decisionDate: new Date(),
+          decidedBy: req.user?.email,
+        },
+      })
+    );
+
+    await Promise.all(updates);
+
+    // Send approval emails
+    const applicants = await prisma.applicant.findMany({
+      where: { id: { in: applicantIds } },
+    });
+
+    for (const applicant of applicants) {
+      try {
+        await sendAdmissionApprovalEmail(
+          applicant.email,
+          `${applicant.firstName} ${applicant.lastName}`
+        );
+      } catch (emailError) {
+        logger.error(`Failed to send email to ${applicant.email}:`, emailError);
+      }
+    }
+
+    logger.info(`Bulk approved ${applicantIds.length} applicants`);
+    res.json({ message: `${applicantIds.length} applicants approved successfully` });
+  } catch (error) {
+    logger.error('Bulk approve error:', error);
+    res.status(500).json({ error: 'Failed to bulk approve applicants' });
+  }
+};
+
+export const bulkReject = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { applicantIds, decisionReason } = req.body;
+
+    if (!applicantIds || !Array.isArray(applicantIds) || applicantIds.length === 0) {
+      res.status(400).json({ error: 'Applicant IDs array is required' });
+      return;
+    }
+
+    const updates = applicantIds.map((id: number) =>
+      prisma.admissionDecision.upsert({
+        where: { applicantId: id },
+        create: {
+          applicantId: id,
+          status: 'REJECTED',
+          decisionDate: new Date(),
+          decidedBy: req.user?.email,
+          decisionReason,
+        },
+        update: {
+          status: 'REJECTED',
+          decisionDate: new Date(),
+          decidedBy: req.user?.email,
+          decisionReason,
+        },
+      })
+    );
+
+    await Promise.all(updates);
+
+    logger.info(`Bulk rejected ${applicantIds.length} applicants`);
+    res.json({ message: `${applicantIds.length} applicants rejected successfully` });
+  } catch (error) {
+    logger.error('Bulk reject error:', error);
+    res.status(500).json({ error: 'Failed to bulk reject applicants' });
+  }
+};
+
+export const bulkDelete = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { applicantIds } = req.body;
+
+    if (!applicantIds || !Array.isArray(applicantIds) || applicantIds.length === 0) {
+      res.status(400).json({ error: 'Applicant IDs array is required' });
+      return;
+    }
+
+    await prisma.applicant.deleteMany({
+      where: { id: { in: applicantIds } },
+    });
+
+    logger.info(`Bulk deleted ${applicantIds.length} applicants`);
+    res.json({ message: `${applicantIds.length} applicants deleted successfully` });
+  } catch (error) {
+    logger.error('Bulk delete error:', error);
+    res.status(500).json({ error: 'Failed to bulk delete applicants' });
+  }
+};
+
+export const getAdmissionSummary = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const [
+      totalApplicants,
+      approvedCount,
+      rejectedCount,
+      pendingCount,
+      applicationFeePaidCount,
+      acceptanceFeePaidCount,
+    ] = await Promise.all([
+      prisma.applicant.count(),
+      prisma.admissionDecision.count({ where: { status: 'APPROVED' } }),
+      prisma.admissionDecision.count({ where: { status: 'REJECTED' } }),
+      prisma.admissionDecision.count({ where: { status: 'PENDING' } }),
+      prisma.applicant.count({ where: { applicationFeePaid: true } }),
+      prisma.applicant.count({ where: { acceptanceFeePaid: true } }),
+    ]);
+
+    const summary = {
+      totalApplicants,
+      approved: approvedCount,
+      rejected: rejectedCount,
+      pending: pendingCount,
+      applicationFeePaid: applicationFeePaidCount,
+      acceptanceFeePaid: acceptanceFeePaidCount,
+    };
+
+    res.json(summary);
+  } catch (error) {
+    logger.error('Get admission summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch admission summary' });
   }
 };

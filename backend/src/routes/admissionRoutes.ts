@@ -4,6 +4,13 @@ import { authenticate, authorize } from '../middleware/auth';
 
 const router = express.Router();
 
+router.get(
+  '/summary',
+  authenticate,
+  authorize('ADMIN', 'STAFF'),
+  admissionController.getAdmissionSummary
+);
+
 router.post(
   '/applicants',
   authenticate,
@@ -51,6 +58,27 @@ router.post(
   authenticate,
   authorize('ADMIN', 'STAFF'),
   admissionController.convertToStudent
+);
+
+router.post(
+  '/applicants/bulk/approve',
+  authenticate,
+  authorize('ADMIN', 'STAFF'),
+  admissionController.bulkApprove
+);
+
+router.post(
+  '/applicants/bulk/reject',
+  authenticate,
+  authorize('ADMIN', 'STAFF'),
+  admissionController.bulkReject
+);
+
+router.post(
+  '/applicants/bulk/delete',
+  authenticate,
+  authorize('ADMIN'),
+  admissionController.bulkDelete
 );
 
 export default router;

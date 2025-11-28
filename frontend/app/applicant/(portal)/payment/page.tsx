@@ -81,10 +81,10 @@ export default function PaymentPage() {
                       <RadioGroupItem value="PAYSTACK" id="paystack-app" />
                       <Label htmlFor="paystack-app" className="cursor-pointer">Paystack</Label>
                     </div>
-                    <div className="flex items-center space-x-2 py-1">
+                    {/* <div className="flex items-center space-x-2 py-1">
                       <RadioGroupItem value="FLUTTERWAVE" id="flutterwave-app" />
                       <Label htmlFor="flutterwave-app" className="cursor-pointer">Flutterwave</Label>
-                    </div>
+                    </div> */}
                   </RadioGroup>
                 </div>
                 <Button onClick={() => handlePayment('APPLICATION')} disabled={initializeAppFee.isPending} className="w-full">
@@ -127,10 +127,10 @@ export default function PaymentPage() {
                       <RadioGroupItem value="PAYSTACK" id="paystack-acc" />
                       <Label htmlFor="paystack-acc" className="cursor-pointer">Paystack</Label>
                     </div>
-                    <div className="flex items-center space-x-2 py-1">
+                    {/* <div className="flex items-center space-x-2 py-1">
                       <RadioGroupItem value="FLUTTERWAVE" id="flutterwave-acc" />
                       <Label htmlFor="flutterwave-acc" className="cursor-pointer">Flutterwave</Label>
-                    </div>
+                    </div> */}
                   </RadioGroup>
                 </div>
                 <Button onClick={() => handlePayment('ACCEPTANCE')} disabled={initializeAccFee.isPending} className="w-full">

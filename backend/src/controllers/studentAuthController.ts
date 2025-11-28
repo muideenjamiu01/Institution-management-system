@@ -91,18 +91,18 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!student || !student.password) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid matric number or username. Please check and try again.',
       });
     }
 
     const isPasswordValid = await bcrypt.compare(data.password, student.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Incorrect password. Please try again or use "Forgot password" to reset.',
       });
     }
 
@@ -407,9 +407,9 @@ export const changePassword = async (req: StudentAuthRequest, res: Response) => 
     );
 
     if (!isCurrentPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Current password is incorrect',
+        message: 'Current password is incorrect. Please try again.',
       });
     }
 

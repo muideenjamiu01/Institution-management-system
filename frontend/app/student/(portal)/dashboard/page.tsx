@@ -62,7 +62,7 @@ export default function StudentDashboard() {
             {getGreeting()}, {currentStudent?.firstName}!
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Here's what's happening with your academics today
+            Welcome to your student portal • Matric No: <span className="font-mono font-semibold">{currentStudent?.matricNo}</span>
           </p>
         </div>
         <Button
@@ -75,6 +75,38 @@ export default function StudentDashboard() {
           <RefreshCw className={`h-4 w-4 ${isRefetchingStats ? 'animate-spin' : ''}`} />
         </Button>
       </div>
+
+      {/* Welcome Banner for New Students */}
+      {notifications.length > 0 && notifications.some((n: any) => n.title.includes('Welcome')) && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start space-x-3">
+              <CheckCircle2 className="h-6 w-6 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-green-900">Welcome to the Student Portal!</h3>
+                <p className="text-sm text-green-800 mt-1">
+                  Congratulations on your admission! Your student account has been successfully created. 
+                  Your matric number is <span className="font-mono font-bold">{currentStudent?.matricNo}</span>.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button size="sm" asChild variant="default">
+                    <Link href="/student/courses">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Register Courses
+                    </Link>
+                  </Button>
+                  <Button size="sm" asChild variant="outline">
+                    <Link href="/student/payments">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      View Invoices
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -269,6 +301,47 @@ export default function StudentDashboard() {
               </Link>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Student Account Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Account Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Matric Number</dt>
+              <dd className="mt-1 text-sm text-gray-900 font-mono font-semibold">
+                {currentStudent?.matricNo}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Email</dt>
+              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.email}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Department</dt>
+              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.department || 'N/A'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Current Level</dt>
+              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.currentLevel || 'N/A'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Programme</dt>
+              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.program || 'N/A'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Status</dt>
+              <dd className="mt-1">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {currentStudent?.status || 'ACTIVE'}
+                </span>
+              </dd>
+            </div>
+          </dl>
         </CardContent>
       </Card>
     </div>

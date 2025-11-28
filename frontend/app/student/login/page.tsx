@@ -64,7 +64,7 @@ export default function StudentLoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Student Portal</CardTitle>
           <CardDescription>
-            Sign in to access your academic dashboard
+            Sign in with your matric number to access your academic dashboard
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -76,11 +76,19 @@ export default function StudentLoginPage() {
               </Alert>
             )}
 
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 text-sm">
+                <strong>New Students:</strong> Use your matric number (e.g., IMS/2025/CVE/00001) as username. 
+                Your password is the same as your applicant portal password.
+              </AlertDescription>
+            </Alert>
+
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Matric Number / Username</Label>
               <Input
                 id="username"
-                placeholder="Enter your username"
+                placeholder="e.g., IMS/2025/CVE/00001"
                 {...register('username')}
                 disabled={isLoading}
               />

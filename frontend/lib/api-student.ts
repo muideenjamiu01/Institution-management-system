@@ -86,8 +86,12 @@ studentApi.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
 
-    // If error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't trigger token refresh on login or register endpoints
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
+                          originalRequest.url?.includes('/auth/register');
+
+    // If error is 401 and we haven't tried to refresh yet, and it's not an auth endpoint
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Queue the request while token is being refreshed
         return new Promise((resolve, reject) => {

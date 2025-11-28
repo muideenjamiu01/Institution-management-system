@@ -196,9 +196,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!applicant || !applicant.password) {
-      res.status(401).json({
+      res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Invalid username. Please check and try again.",
       });
       return;
     }
@@ -209,9 +209,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     );
 
     if (!isPasswordValid) {
-      res.status(401).json({
+      res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect password. Please try again or use 'Forgot password' to reset.",
       });
       return;
     }

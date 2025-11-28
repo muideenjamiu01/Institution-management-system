@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CheckCircle2,
   Clock,
@@ -204,18 +205,39 @@ export default function ApplicantDashboardPage() {
                     : " Please pay your acceptance fee to secure your admission and receive your matriculation number."}
                 </p>
                 {currentProfile.hasMatricNumber && currentProfile.matricNo && (
-                  <div className="mt-3 p-3 bg-white border border-green-300 rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <IdCard className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="text-xs text-green-700 font-medium">
-                          Your Matric Number
-                        </p>
-                        <p className="text-lg font-bold text-green-900 font-mono">
-                          {currentProfile.matricNo}
-                        </p>
+                  <div className="mt-3 space-y-3">
+                    <div className="p-3 bg-white border border-green-300 rounded-md">
+                      <div className="flex items-center space-x-2">
+                        <IdCard className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="text-xs text-green-700 font-medium">
+                            Your Matric Number
+                          </p>
+                          <p className="text-lg font-bold text-green-900 font-mono">
+                            {currentProfile.matricNo}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                    
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertCircle className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-blue-800 text-sm">
+                        <strong>Your Student Portal is Ready!</strong>
+                        <br />
+                        You can now access the student portal using:
+                        <ul className="list-disc ml-4 mt-2 space-y-1">
+                          <li><strong>Username:</strong> <span className="font-mono">{currentProfile.matricNo}</span></li>
+                          <li><strong>Password:</strong> Same as your applicant portal password</li>
+                        </ul>
+                        <Button asChild size="sm" className="mt-3">
+                          <Link href="/student/login" className="inline-flex items-center">
+                            Login to Student Portal
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 )}
               </div>

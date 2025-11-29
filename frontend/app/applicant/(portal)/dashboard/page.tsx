@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useApplicantAuth } from "@/lib/applicant-auth-context";
 import { useApplicantProfile } from "@/lib/hooks/useApplicantQueries";
@@ -29,8 +30,36 @@ import {
 } from "@/lib/api-applicant";
 
 export default function ApplicantDashboardPage() {
-  const { applicant } = useApplicantAuth();
+  const { applicant, updateApplicant } = useApplicantAuth();
   const { data: profileData, refetch, isRefetching } = useApplicantProfile();
+
+  // Auto-refresh when page becomes visible or window gains focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+
+    const handleFocus = () => {
+      refetch();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refetch]);
+
+  // Update auth context when profile data changes
+  useEffect(() => {
+    if (profileData) {
+      updateApplicant(profileData);
+    }
+  }, [profileData, updateApplicant]);
 
   const handleRefresh = () => {
     refetch();
@@ -39,7 +68,7 @@ export default function ApplicantDashboardPage() {
   if (!applicant) return null;
 
   // Use profile data if available, otherwise fall back to auth context
-  const currentProfile = profileData?.data || applicant;
+  const currentProfile = profileData || applicant;
 
   const hasCompletedProfile =
     currentProfile.dateOfBirth && currentProfile.gender && currentProfile.address;

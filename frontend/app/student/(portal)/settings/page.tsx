@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStudentAuth } from '@/lib/student-auth-context';
+import { useStudentProfile } from '@/lib/hooks/useStudentQueries';
 import { profileApi } from '@/lib/api-student';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function StudentSettings() {
   const { student, updateStudent } = useStudentAuth();
+  const { data: profileData, refetch: refetchProfile } = useStudentProfile();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [updatingProfile, setUpdatingProfile] = useState(false);
@@ -43,11 +45,14 @@ export default function StudentSettings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Merge profile data from API with auth context
+  const currentProfile = profileData?.data || student;
+
   const profileForm = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      phone: student?.phone || '',
-      address: student?.address || '',
+      phone: currentProfile?.phone || '',
+      address: currentProfile?.address || '',
     },
   });
 
@@ -59,7 +64,8 @@ export default function StudentSettings() {
     try {
       setUpdatingProfile(true);
       const response = await profileApi.updateProfile(data);
-      updateStudent(response.data);
+      const updatedData = response.data || response;
+      updateStudent(updatedData);
       toast({
         title: 'Success',
         description: 'Profile updated successfully',
@@ -128,7 +134,11 @@ export default function StudentSettings() {
       formData.append('profilePicture', file);
 
       const response = await profileApi.uploadProfilePicture(formData);
-      updateStudent(response.data);
+      const updatedData = response.data || response;
+      
+      // Update auth context immediately
+      updateStudent(updatedData);
+      
       toast({
         title: 'Success',
         description: 'Profile picture updated successfully',
@@ -145,8 +155,23 @@ export default function StudentSettings() {
   };
 
   const getInitials = () => {
-    if (!student) return 'ST';
-    return `${student.firstName[0]}${student.lastName[0]}`.toUpperCase();
+    if (!currentProfile || !currentProfile.firstName || !currentProfile.lastName) return 'ST';
+    return `${currentProfile.firstName[0]}${currentProfile.lastName[0]}`.toUpperCase();
+  };
+
+  const getProfilePictureUrl = () => {
+    if (!currentProfile?.profilePicture) return undefined;
+    
+    // If it's already a full URL, return as is
+    if (currentProfile.profilePicture.startsWith('http')) {
+      return currentProfile.profilePicture;
+    }
+    
+    // Otherwise, prepend the API base URL
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const fullUrl = `${baseUrl}${currentProfile.profilePicture}`;
+    console.log('Profile Picture URL:', fullUrl); // Debug log
+    return fullUrl;
   };
 
   return (
@@ -184,8 +209,8 @@ export default function StudentSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={student?.profilePicture || undefined} />
+                <Avatar className="h-24 w-24" key={currentProfile?.profilePicture || 'no-pic'}>
+                  <AvatarImage src={getProfilePictureUrl()} />
                   <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
@@ -222,12 +247,12 @@ export default function StudentSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>First Name</Label>
-                    <Input value={student?.firstName || ''} disabled />
+                    <Input value={currentProfile?.firstName || ''} disabled />
                     <p className="text-xs text-muted-foreground">Cannot be changed</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Last Name</Label>
-                    <Input value={student?.lastName || ''} disabled />
+                    <Input value={currentProfile?.lastName || ''} disabled />
                     <p className="text-xs text-muted-foreground">Cannot be changed</p>
                   </div>
                 </div>
@@ -235,12 +260,12 @@ export default function StudentSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Matric Number</Label>
-                    <Input value={student?.matricNo || ''} disabled />
+                    <Input value={currentProfile?.matricNo || ''} disabled />
                     <p className="text-xs text-muted-foreground">Cannot be changed</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    <Input value={student?.email || ''} disabled />
+                    <Input value={currentProfile?.email || ''} disabled />
                     <p className="text-xs text-muted-foreground">Cannot be changed</p>
                   </div>
                 </div>

@@ -17,7 +17,9 @@ export const useApplicantProfile = () => {
   return useQuery({
     queryKey: applicantKeys.profile(),
     queryFn: profileApi.getProfile,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 0, // No caching - always fetch fresh data
+    refetchOnWindowFocus: true, // Auto-refetch when user returns to tab
+    refetchOnMount: true, // Always refetch on component mount
   });
 };
 

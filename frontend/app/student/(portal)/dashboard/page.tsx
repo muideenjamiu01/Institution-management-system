@@ -323,7 +323,11 @@ export default function StudentDashboard() {
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Department</dt>
-              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.department || 'N/A'}</dd>
+              <dd className="mt-1 text-sm text-gray-900">
+                {typeof currentStudent?.department === 'string' 
+                  ? currentStudent.department 
+                  : currentStudent?.department?.name || 'N/A'}
+              </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Current Level</dt>
@@ -331,7 +335,11 @@ export default function StudentDashboard() {
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Programme</dt>
-              <dd className="mt-1 text-sm text-gray-900">{currentStudent?.program || 'N/A'}</dd>
+              <dd className="mt-1 text-sm text-gray-900">
+                {typeof currentStudent?.program === 'string'
+                  ? currentStudent.program
+                  : currentStudent?.program?.name || 'N/A'}
+              </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Status</dt>

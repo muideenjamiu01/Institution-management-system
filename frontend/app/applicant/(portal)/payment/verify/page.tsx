@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useApplicantAuth } from "@/lib/applicant-auth-context";
-import { useVerifyPayment } from "@/lib/hooks/useApplicantQueries";
+import { useVerifyPayment, applicantKeys } from "@/lib/hooks/useApplicantQueries";
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ type VerificationStatus = "verifying" | "success" | "failed";
 export default function PaymentVerifyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { refreshProfile } = useApplicantAuth();
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const verifyPaymentMutation = useVerifyPayment();
@@ -31,14 +33,18 @@ export default function PaymentVerifyPage() {
     }
 
     verifyPaymentMutation.mutate(reference, {
-      onSuccess: (response) => {
+      onSuccess: async (response) => {
         if (response.data?.status === "PAID") {
           setPaymentInfo(response.data);
-          refreshProfile();
+          // Invalidate all queries and force immediate refetch
+          await queryClient.invalidateQueries({ queryKey: applicantKeys.all });
+          await queryClient.refetchQueries({ queryKey: applicantKeys.profile(), type: 'active' });
+          // Refresh profile in auth context after queries are updated
+          await refreshProfile();
         }
       },
     });
-  }, [searchParams]);
+  }, [searchParams, queryClient, refreshProfile]);
 
   const getPaymentTypeMessage = () => {
     if (!paymentInfo) return "";

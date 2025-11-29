@@ -190,6 +190,11 @@ export const authApi = {
 
 // ===== Dashboard API =====
 export const dashboardApi = {
+  getOverview: async () => {
+    const response = await studentApi.get('/dashboard');
+    return response.data;
+  },
+
   getStats: async () => {
     const response = await studentApi.get('/dashboard/stats');
     return response.data;
@@ -200,18 +205,28 @@ export const dashboardApi = {
     return response.data;
   },
 
+  getAlerts: async () => {
+    const response = await studentApi.get('/dashboard/alerts');
+    return response.data;
+  },
+
   getUpcomingDeadlines: async () => {
     const response = await studentApi.get('/dashboard/deadlines');
     return response.data;
   },
 
-  getNotifications: async () => {
-    const response = await studentApi.get('/dashboard/notifications');
+  getNotifications: async (params?: { page?: number; limit?: number; type?: string }) => {
+    const response = await studentApi.get('/notifications', { params });
     return response.data;
   },
 
   markNotificationAsRead: async (notificationId: number) => {
-    const response = await studentApi.patch(`/dashboard/notifications/${notificationId}/read`);
+    const response = await studentApi.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsAsRead: async () => {
+    const response = await studentApi.patch('/notifications/read-all');
     return response.data;
   },
 

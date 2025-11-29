@@ -359,6 +359,10 @@ export const verifyPayment = async (req: ApplicantAuthRequest, res: Response) =>
         throw new Error("Applicant not found");
       }
 
+      logger.info(`Creating student account for applicant ${fullApplicant.email}`);
+      logger.info(`Applicant password exists: ${!!fullApplicant.password}`);
+      logger.info(`Password hash preview: ${fullApplicant.password?.substring(0, 20)}...`);
+
       // Step 4: Automatically create student account
       let student = await prisma.student.findUnique({
         where: { matricNo: matricNumber.matricNo },
@@ -409,6 +413,9 @@ export const verifyPayment = async (req: ApplicantAuthRequest, res: Response) =>
             acceptanceFeePaid: true,
           },
         });
+
+        logger.info(`Student account created successfully with matricNo: ${matricNumber.matricNo}`);
+        logger.info(`Student password transferred: ${!!student.password}`);
 
         // Link matric number to student
         await prisma.matricNumber.update({

@@ -81,8 +81,16 @@ export const login = async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
 
-    const student = await prisma.student.findUnique({
-      where: { username: data.username },
+    logger.info(`Student login attempt with username/matricNo: ${data.username}`);
+
+    // Try to find student by username OR matricNo
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { username: data.username },
+          { matricNo: data.username },
+        ],
+      },
       include: {
         department: true,
         program: true,
@@ -90,10 +98,19 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    if (!student || !student.password) {
+    if (!student) {
+      logger.warn(`Student not found with username/matricNo: ${data.username}`);
       return res.status(400).json({
         success: false,
         message: 'Invalid matric number or username. Please check and try again.',
+      });
+    }
+
+    if (!student.password) {
+      logger.warn(`Student ${student.matricNo} has no password set`);
+      return res.status(400).json({
+        success: false,
+        message: 'Your account password is not set. Please contact administration or use "Forgot Password".',
       });
     }
 

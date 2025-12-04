@@ -19,6 +19,8 @@ import applicantAuthRoutes from './routes/applicantAuthRoutes';
 import applicantProfileRoutes from './routes/applicantProfileRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import applicantPaymentRoutes from './routes/applicantPaymentRoutes';
+import studentPaymentRoutes from './routes/studentPaymentRoutes';
+import adminPaymentRoutes from './routes/adminPaymentRoutes';
 
 dotenv.config();
 
@@ -39,13 +41,36 @@ app.use(
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (increased from 300)
+  max: 2000, // Limit each IP to 2000 requests per windowMs (increased from 1000)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
+// Lenient rate limit for profile endpoints (higher frequency allowed)
+const profileLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // 500 requests per 15 minutes for profile endpoints
+  message: 'Too many profile requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Very lenient rate limit for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 login attempts per 15 minutes
+  message: 'Too many login attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/', limiter);
+app.use('/api/applicant/profile', profileLimiter);
+app.use('/api/student/profile', profileLimiter);
+app.use('/api/auth/', authLimiter);
+app.use('/api/applicant/auth/', authLimiter);
+app.use('/api/student/auth/', authLimiter);
 
 // Body parser
 app.use(express.json());
@@ -80,6 +105,12 @@ app.use('/api/student', studentPortalRoutes);
 app.use('/api/applicant/auth', applicantAuthRoutes);
 app.use('/api/applicant', applicantProfileRoutes);
 app.use('/api/applicant/payment', applicantPaymentRoutes);
+
+// Student Payment Routes
+app.use('/api/student/payments', studentPaymentRoutes);
+
+// Admin Payment Routes
+app.use('/api/admin/payments', adminPaymentRoutes);
 
 // Webhook Routes (payment gateways)
 app.use('/api/webhooks', webhookRoutes);

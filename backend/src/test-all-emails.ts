@@ -91,8 +91,7 @@ async function testAllEmails() {
   try {
     const result = await sendAdmissionApprovalEmail(
       testEmail,
-      'John Doe',
-      'IMS/2025/CSC/00123'
+      'John Doe'
     );
     
     if (result.success) {

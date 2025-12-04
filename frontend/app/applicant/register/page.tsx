@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Copy, Check } from 'lucide-react';
+import { GraduationCap, Loader2, AlertCircle, CheckCircle2, Copy, Check, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 const registerSchema = z.object({
@@ -71,8 +71,26 @@ export default function ApplicantRegisterPage() {
 
   if (credentials) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100 p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=1920&q=80"
+            alt="Background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 to-emerald-900/80 backdrop-blur-sm" />
+        </div>
+
+        {/* Back to Home */}
+        <Link href="/" className="absolute top-4 left-4 z-10">
+          <Button variant="ghost" className="text-white hover:bg-white/20">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Button>
+        </Link>
+
+        <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/95 backdrop-blur-md">
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">
               <div className="bg-green-500 rounded-full p-3">
@@ -166,7 +184,7 @@ export default function ApplicantRegisterPage() {
           </CardFooter>
         </Card>
 
-        <div className="absolute bottom-4 text-center text-sm text-muted-foreground">
+        <div className="absolute bottom-4 text-center text-sm text-white z-10">
           <p>© 2025 IMS by 2024/2025 Computer Science Conversion Students. All rights reserved.</p>
         </div>
       </div>
@@ -174,8 +192,26 @@ export default function ApplicantRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=1920&q=80"
+          alt="Background"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 to-pink-900/80 backdrop-blur-sm" />
+      </div>
+
+      {/* Back to Home */}
+      <Link href="/" className="absolute top-4 left-4 z-10">
+        <Button variant="ghost" className="text-white hover:bg-white/20">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+      </Link>
+
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/95 backdrop-blur-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-primary rounded-full p-3">
@@ -281,7 +317,7 @@ export default function ApplicantRegisterPage() {
         </form>
       </Card>
 
-      <div className="absolute bottom-4 text-center text-xs md:text-sm text-muted-foreground">
+      <div className="absolute bottom-4 text-center text-xs md:text-sm text-white z-10">
         <p>© 2025 IMS by 2024/2025 Computer Science Conversion Students. All rights reserved.</p>
       </div>
     </div>

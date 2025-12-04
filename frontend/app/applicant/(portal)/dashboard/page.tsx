@@ -33,24 +33,25 @@ export default function ApplicantDashboardPage() {
   const { applicant, updateApplicant } = useApplicantAuth();
   const { data: profileData, refetch, isRefetching } = useApplicantProfile();
 
-  // Auto-refresh when page becomes visible or window gains focus
+  // Only refetch on visibility change if data is older than 5 minutes
   useEffect(() => {
+    let lastFetchTime = 0;
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        refetch();
+        const now = Date.now();
+        // Only refetch if more than 5 minutes have passed since last fetch
+        if (now - lastFetchTime > 5 * 60 * 1000) {
+          refetch();
+          lastFetchTime = now;
+        }
       }
     };
 
-    const handleFocus = () => {
-      refetch();
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [refetch]);
 
@@ -61,8 +62,17 @@ export default function ApplicantDashboardPage() {
     }
   }, [profileData, updateApplicant]);
 
+  // Use throttled refresh to prevent excessive API calls
   const handleRefresh = () => {
-    refetch();
+    const now = Date.now();
+    const lastRefreshKey = 'lastProfileRefresh';
+    const lastRefresh = parseInt(localStorage.getItem(lastRefreshKey) || '0');
+    
+    // Only allow refresh every 30 seconds
+    if (now - lastRefresh > 30000) {
+      refetch();
+      localStorage.setItem(lastRefreshKey, now.toString());
+    }
   };
 
   if (!applicant) return null;

@@ -1,7 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { paymentsApi, formatCurrency, downloadFile } from '@/lib/api-student';
+import { 
+  useInvoices, 
+  usePaymentHistory, 
+  useWalletBalance, 
+  useInitializePayment,
+  usePayWithWallet 
+} from '@/lib/hooks/useStudentQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,79 +63,72 @@ interface Payment {
 }
 
 export default function PaymentsPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState<number | null>(null);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [loadingPayment, setLoadingPayment] = useState<{ invoiceId: number; method: string } | null>(null);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
 
+  // Handle payment verification redirect
   useEffect(() => {
-    loadPaymentData();
-  }, []);
+    const verification = searchParams.get('verification');
+    const reference = searchParams.get('reference');
 
-  const loadPaymentData = async () => {
-    try {
-      setLoading(true);
-      const [invoicesRes, paymentsRes, walletRes] = await Promise.all([
-        paymentsApi.getInvoices(),
-        paymentsApi.getPaymentHistory(),
-        paymentsApi.getWalletBalance(),
-      ]);
-      setInvoices(invoicesRes.data);
-      setPayments(paymentsRes.data);
-      setWalletBalance(walletRes.data.balance);
-    } catch (error) {
-      console.error('Error loading payment data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load payment data',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInitiatePayment = async (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
-    try {
-      setPaying(invoiceId);
-      const response = await paymentsApi.initializePayment(invoiceId, method);
-      
-      // Redirect to payment gateway
-      if (response.data.authorization_url) {
-        window.location.href = response.data.authorization_url;
+    if (verification && reference) {
+      if (verification === 'success') {
+        toast({
+          title: 'Payment Successful',
+          description: `Payment ${reference} has been verified successfully.`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Payment Failed',
+          description: `Payment ${reference} verification failed.`,
+          variant: 'destructive',
+        });
       }
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to initialize payment',
-        variant: 'destructive',
-      });
-      setPaying(null);
+
+      // Clean up URL parameters
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verification');
+      url.searchParams.delete('reference');
+      window.history.replaceState({}, '', url.toString());
     }
+  }, [searchParams, toast]);
+
+  // React Query hooks
+  const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
+  const { data: paymentsData, isLoading: paymentsLoading } = usePaymentHistory();
+  const { data: walletData, isLoading: walletLoading } = useWalletBalance();
+  const initializePaymentMutation = useInitializePayment();
+  const payWithWalletMutation = usePayWithWallet();
+
+  const invoices = invoicesData?.data || [];
+  const payments = paymentsData?.data || [];
+  const walletBalance = walletData?.data?.balance || 0;
+  const loading = invoicesLoading || paymentsLoading || walletLoading;
+
+  const handleInitiatePayment = (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
+    setLoadingPayment({ invoiceId, method });
+    initializePaymentMutation.mutate(
+      { invoiceId, method },
+      {
+        onSettled: () => {
+          setLoadingPayment(null);
+        },
+      }
+    );
   };
 
-  const handleWalletPayment = async (invoiceId: number) => {
-    try {
-      setPaying(invoiceId);
-      await paymentsApi.payWithWallet(invoiceId);
-      toast({
-        title: 'Success',
-        description: 'Payment successful',
-      });
-      await loadPaymentData();
-      setSelectedInvoice(null);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to process payment',
-        variant: 'destructive',
-      });
-    } finally {
-      setPaying(null);
-    }
+  const handleWalletPayment = (invoiceId: number) => {
+    payWithWalletMutation.mutate(
+      { invoiceId },
+      {
+        onSuccess: () => {
+          setSelectedInvoice(null);
+        },
+      }
+    );
   };
 
   const handleDownloadReceipt = async (paymentId: number, reference: string) => {
@@ -207,7 +208,7 @@ export default function PaymentsPage() {
 
         <TabsContent value="invoices" className="space-y-4">
           <div className="grid gap-4">
-            {invoices.map((invoice) => (
+            {invoices.map((invoice: Invoice) => (
               <Card key={invoice.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -265,29 +266,33 @@ export default function PaymentsPage() {
                           <Button
                             className="w-full"
                             onClick={() => handleInitiatePayment(invoice.id, 'PAYSTACK')}
-                            disabled={paying === invoice.id}
+                            disabled={loadingPayment?.invoiceId === invoice.id}
                           >
                             <CreditCard className="h-4 w-4 mr-2" />
-                            {paying === invoice.id ? 'Processing...' : 'Pay with Paystack'}
+                            {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'PAYSTACK' 
+                              ? 'Processing...' 
+                              : 'Pay with Paystack'}
                           </Button>
                           <Button
                             className="w-full"
                             variant="outline"
                             onClick={() => handleInitiatePayment(invoice.id, 'FLUTTERWAVE')}
-                            disabled={paying === invoice.id}
+                            disabled={loadingPayment?.invoiceId === invoice.id}
                           >
                             <CreditCard className="h-4 w-4 mr-2" />
-                            {paying === invoice.id ? 'Processing...' : 'Pay with Flutterwave'}
+                            {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'FLUTTERWAVE' 
+                              ? 'Processing...' 
+                              : 'Pay with Flutterwave'}
                           </Button>
                           {walletBalance >= invoice.balance && (
                             <Button
                               className="w-full"
                               variant="secondary"
                               onClick={() => handleWalletPayment(invoice.id)}
-                              disabled={paying === invoice.id}
+                              disabled={payWithWalletMutation.isPending}
                             >
                               <Wallet className="h-4 w-4 mr-2" />
-                              {paying === invoice.id ? 'Processing...' : 'Pay from Wallet'}
+                              {payWithWalletMutation.isPending ? 'Processing...' : 'Pay from Wallet'}
                             </Button>
                           )}
                         </div>
@@ -327,7 +332,7 @@ export default function PaymentsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
+                  {payments.map((payment: Payment) => (
                     <TableRow key={payment.id}>
                       <TableCell className="font-mono text-sm">{payment.reference}</TableCell>
                       <TableCell>

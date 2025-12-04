@@ -288,8 +288,10 @@ export const useInitializePayment = () => {
     mutationFn: ({ invoiceId, method }: { invoiceId: number; method: 'PAYSTACK' | 'FLUTTERWAVE' }) =>
       paymentsApi.initializePayment(invoiceId, method),
     onSuccess: (data) => {
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+      // Handle the nested response structure
+      const authUrl = data.data?.authorization_url || data.authorization_url;
+      if (authUrl) {
+        window.location.href = authUrl;
       }
     },
     onError: (error: any) => {
@@ -302,26 +304,37 @@ export const useInitializePayment = () => {
   });
 };
 
-export const useVerifyPayment = () => {
+export const usePayWithWallet = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: paymentsApi.verifyPayment,
+    mutationFn: ({ invoiceId }: { invoiceId: number }) =>
+      paymentsApi.payWithWallet(invoiceId),
     onSuccess: () => {
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: studentKeys.payments() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.walletBalance() });
       toast({
         title: 'Success',
-        description: 'Payment verified successfully',
+        description: 'Payment completed successfully',
       });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to verify payment',
+        description: error.response?.data?.message || 'Failed to process payment',
         variant: 'destructive',
       });
     },
+  });
+};
+
+export const usePaymentStats = () => {
+  return useQuery({
+    queryKey: [...studentKeys.payments(), 'stats'] as const,
+    queryFn: paymentsApi.getPaymentStats,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 

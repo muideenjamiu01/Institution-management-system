@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   Building2,
+  CreditCard,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -51,6 +52,7 @@ export default function DashboardLayout({
     { name: 'Departments', href: '/dashboard/departments', icon: Building2 },
     { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
     { name: 'Exams', href: '/dashboard/exams', icon: GraduationCap },
+    { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
   ];
 
   if (!user) {

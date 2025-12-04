@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GraduationCap, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Loader2, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 const loginSchema = z.object({
@@ -54,8 +54,26 @@ export default function StudentLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920&q=80"
+          alt="Background"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/85 to-indigo-900/85 backdrop-blur-sm" />
+      </div>
+
+      {/* Back to Home */}
+      <Link href="/" className="absolute top-4 left-4 z-10">
+        <Button variant="ghost" className="text-white hover:bg-white/20">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+      </Link>
+
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/95 backdrop-blur-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-primary rounded-full p-3">
@@ -145,7 +163,7 @@ export default function StudentLoginPage() {
 
             <div className="text-sm text-center text-muted-foreground">
               Don't have an account?{' '}
-              <Link href="/student/register" className="text-primary hover:underline">
+              <Link href="/applicant/register" className="text-primary hover:underline">
                 Register here
               </Link>
             </div>
@@ -153,7 +171,7 @@ export default function StudentLoginPage() {
         </form>
       </Card>
 
-      <div className="absolute bottom-4 text-center text-sm text-muted-foreground">
+      <div className="absolute bottom-4 text-center text-sm text-white z-10">
         <p>© 2025 Institutional Management System. All rights reserved.</p>
       </div>
     </div>

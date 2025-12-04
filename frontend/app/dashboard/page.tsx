@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, BookOpen, ClipboardCheck } from 'lucide-react';
+import { Users, GraduationCap, BookOpen, ClipboardCheck, CreditCard } from 'lucide-react';
 import api from '@/lib/api';
 
 // Dashboard query hook
@@ -11,11 +11,12 @@ const useDashboardStats = () => {
   return useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const [studentsRes, summaryRes, coursesRes, examsRes] = await Promise.all([
+      const [studentsRes, summaryRes, coursesRes, examsRes, paymentsRes] = await Promise.all([
         api.get('/students?limit=1'),
         api.get('/admissions/summary'),
         api.get('/courses?limit=1'),
         api.get('/exams?limit=1'),
+        api.get('/admin/payments/statistics').catch(() => ({ data: { data: { totalStats: { totalInvoices: 0, paidInvoices: 0 } } } })),
       ]);
 
       return {
@@ -26,6 +27,8 @@ const useDashboardStats = () => {
         pending: summaryRes.data?.pending || 0,
         courses: coursesRes.data.pagination?.total || 0,
         exams: examsRes.data.pagination?.total || 0,
+        totalInvoices: paymentsRes.data?.data?.totalStats?.totalInvoices || 0,
+        paidInvoices: paymentsRes.data?.data?.totalStats?.paidInvoices || 0,
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -94,6 +97,22 @@ export default function DashboardPage() {
       description: 'Scheduled exams',
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
+    },
+    {
+      title: 'Total Invoices',
+      value: stats?.totalInvoices || 0,
+      icon: CreditCard,
+      description: 'All invoices',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+    },
+    {
+      title: 'Paid Invoices',
+      value: stats?.paidInvoices || 0,
+      icon: CreditCard,
+      description: 'Completed payments',
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
     },
   ];
 

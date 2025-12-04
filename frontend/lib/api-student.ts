@@ -361,21 +361,11 @@ export const paymentsApi = {
     return response.data;
   },
 
-  getInvoiceDetails: async (invoiceId: number) => {
-    const response = await studentApi.get(`/payments/invoices/${invoiceId}`);
-    return response.data;
-  },
-
   initializePayment: async (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
     const response = await studentApi.post('/payments/initialize', {
       invoiceId,
       method,
     });
-    return response.data;
-  },
-
-  verifyPayment: async (reference: string) => {
-    const response = await studentApi.post('/payments/verify', { reference });
     return response.data;
   },
 
@@ -395,9 +385,14 @@ export const paymentsApi = {
   },
 
   downloadReceipt: async (paymentId: number) => {
-    const response = await studentApi.get(`/payments/${paymentId}/receipt`, {
+    const response = await studentApi.get(`/payments/receipt/${paymentId}`, {
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  getPaymentStats: async () => {
+    const response = await studentApi.get('/payments/stats');
     return response.data;
   },
 };

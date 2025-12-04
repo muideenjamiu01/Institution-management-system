@@ -52,8 +52,15 @@ export default function CoursesPage() {
         courseApi.getAvailableCourses(),
         courseApi.getRegisteredCourses(),
       ]);
-      setAvailableCourses(availableRes.data);
-      setRegisteredCourses(registeredRes.data);
+      
+      // Handle response structure - check if data is nested
+      const availableData = availableRes.data?.courses || availableRes.data || [];
+      const registeredData = registeredRes.data?.firstSemester?.courses || 
+                            registeredRes.data?.secondSemester?.courses || 
+                            registeredRes.data || [];
+      
+      setAvailableCourses(Array.isArray(availableData) ? availableData : []);
+      setRegisteredCourses(Array.isArray(registeredData) ? registeredData : []);
     } catch (error) {
       console.error('Error loading courses:', error);
       toast({
@@ -104,7 +111,7 @@ export default function CoursesPage() {
     }
   };
 
-  const filteredAvailableCourses = availableCourses.filter(
+  const filteredAvailableCourses = (availableCourses || []).filter(
     (course) =>
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.code.toLowerCase().includes(searchQuery.toLowerCase())
@@ -130,10 +137,10 @@ export default function CoursesPage() {
       <Tabs defaultValue="available" className="space-y-4">
         <TabsList>
           <TabsTrigger value="available">
-            Available Courses ({availableCourses.length})
+            Available Courses ({(availableCourses || []).length})
           </TabsTrigger>
           <TabsTrigger value="registered">
-            My Courses ({registeredCourses.length})
+            My Courses ({(registeredCourses || []).length})
           </TabsTrigger>
         </TabsList>
 
@@ -252,7 +259,7 @@ export default function CoursesPage() {
             <div className="text-center py-12">
               <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">You haven't registered any courses yet</p>
-              <Button className="mt-4" onClick={() => document.querySelector('[value="available"]')?.click()}>
+              <Button className="mt-4" onClick={() => (document.querySelector('[value="available"]') as HTMLElement)?.click()}>
                 Browse Available Courses
               </Button>
             </div>

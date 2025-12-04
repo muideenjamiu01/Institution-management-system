@@ -200,6 +200,7 @@ async function main() {
 
     const student = await prisma.student.create({
       data: {
+        username: matricNo,
         email,
         firstName,
         lastName,

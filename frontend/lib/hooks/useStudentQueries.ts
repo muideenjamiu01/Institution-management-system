@@ -39,6 +39,14 @@ export const studentKeys = {
 };
 
 // ===== Dashboard Hooks =====
+export const useDashboardOverview = () => {
+  return useQuery({
+    queryKey: studentKeys.dashboard(),
+    queryFn: dashboardApi.getOverview,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
 export const useDashboardStats = () => {
   return useQuery({
     queryKey: studentKeys.dashboardStats(),
@@ -55,10 +63,18 @@ export const useDashboardActivities = () => {
   });
 };
 
-export const useDashboardNotifications = () => {
+export const useDashboardAlerts = () => {
   return useQuery({
-    queryKey: studentKeys.dashboardNotifications(),
-    queryFn: dashboardApi.getNotifications,
+    queryKey: [...studentKeys.dashboard(), 'alerts'] as const,
+    queryFn: dashboardApi.getAlerts,
+    staleTime: 1000 * 60 * 1, // 1 minute
+  });
+};
+
+export const useDashboardNotifications = (params?: { page?: number; limit?: number; type?: string }) => {
+  return useQuery({
+    queryKey: [...studentKeys.dashboardNotifications(), params] as const,
+    queryFn: () => dashboardApi.getNotifications(params),
     staleTime: 1000 * 60 * 1, // 1 minute
   });
 };
@@ -70,6 +86,19 @@ export const useMarkNotificationAsRead = () => {
     mutationFn: dashboardApi.markNotificationAsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: studentKeys.dashboardNotifications() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.dashboard() });
+    },
+  });
+};
+
+export const useMarkAllNotificationsAsRead = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: dashboardApi.markAllNotificationsAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.dashboardNotifications() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.dashboard() });
     },
   });
 };
@@ -259,8 +288,10 @@ export const useInitializePayment = () => {
     mutationFn: ({ invoiceId, method }: { invoiceId: number; method: 'PAYSTACK' | 'FLUTTERWAVE' }) =>
       paymentsApi.initializePayment(invoiceId, method),
     onSuccess: (data) => {
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
+      // Handle the nested response structure
+      const authUrl = data.data?.authorization_url || data.authorization_url;
+      if (authUrl) {
+        window.location.href = authUrl;
       }
     },
     onError: (error: any) => {
@@ -273,26 +304,37 @@ export const useInitializePayment = () => {
   });
 };
 
-export const useVerifyPayment = () => {
+export const usePayWithWallet = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: paymentsApi.verifyPayment,
+    mutationFn: ({ invoiceId }: { invoiceId: number }) =>
+      paymentsApi.payWithWallet(invoiceId),
     onSuccess: () => {
+      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: studentKeys.payments() });
+      queryClient.invalidateQueries({ queryKey: studentKeys.walletBalance() });
       toast({
         title: 'Success',
-        description: 'Payment verified successfully',
+        description: 'Payment completed successfully',
       });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error.response?.data?.message || 'Failed to verify payment',
+        description: error.response?.data?.message || 'Failed to process payment',
         variant: 'destructive',
       });
     },
+  });
+};
+
+export const usePaymentStats = () => {
+  return useQuery({
+    queryKey: [...studentKeys.payments(), 'stats'] as const,
+    queryFn: paymentsApi.getPaymentStats,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -301,7 +343,9 @@ export const useStudentProfile = () => {
   return useQuery({
     queryKey: studentKeys.profile(),
     queryFn: profileApi.getProfile,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 30, // 30 minutes - longer cache to reduce calls
+    refetchOnMount: false, // Don't refetch on mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };
 

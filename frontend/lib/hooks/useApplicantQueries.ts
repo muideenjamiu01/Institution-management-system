@@ -17,7 +17,12 @@ export const useApplicantProfile = () => {
   return useQuery({
     queryKey: applicantKeys.profile(),
     queryFn: profileApi.getProfile,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 10, // 10 minutes - cache for longer
+    gcTime: 1000 * 60 * 30, // 30 minutes in memory
+    refetchOnWindowFocus: false, // Don't auto-refetch on focus
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
+    refetchInterval: false, // Disable automatic refetching
+    retry: 2, // Only retry failed requests twice
   });
 };
 
@@ -49,7 +54,11 @@ export const useApplicationStatus = () => {
   return useQuery({
     queryKey: applicantKeys.applicationStatus(),
     queryFn: applicationApi.getApplicationStatus,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 15, // 15 minutes - longer cache for status
+    gcTime: 1000 * 60 * 30, // 30 minutes in memory
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 2,
   });
 };
 
@@ -82,7 +91,11 @@ export const usePaymentHistory = () => {
   return useQuery({
     queryKey: applicantKeys.paymentHistory(),
     queryFn: paymentApi.getPaymentHistory,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 10, // 10 minutes - payment history changes less frequently
+    gcTime: 1000 * 60 * 30, // 30 minutes in memory
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 2,
   });
 };
 

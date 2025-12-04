@@ -196,9 +196,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!applicant || !applicant.password) {
-      res.status(401).json({
+      res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Invalid username. Please check and try again.",
       });
       return;
     }
@@ -209,9 +209,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     );
 
     if (!isPasswordValid) {
-      res.status(401).json({
+      res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect password. Please try again or use 'Forgot password' to reset.",
       });
       return;
     }
@@ -443,6 +443,19 @@ export const resetPassword = async (
       },
     });
 
+    // Also update student password if student account exists
+    const student = await prisma.student.findFirst({
+      where: { email: applicant.email },
+    });
+
+    if (student) {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { password: hashedPassword },
+      });
+      logger.info(`Password also reset for student: ${student.matricNo}`);
+    }
+
     logger.info(`Password reset successful for: ${applicant.username}`);
 
     res.json({
@@ -505,6 +518,19 @@ export const changePassword = async (
       where: { id: applicantId },
       data: { password: hashedPassword },
     });
+
+    // Also update student password if student account exists
+    const student = await prisma.student.findFirst({
+      where: { email: applicant.email },
+    });
+
+    if (student) {
+      await prisma.student.update({
+        where: { id: student.id },
+        data: { password: hashedPassword },
+      });
+      logger.info(`Password also updated for student: ${student.matricNo}`);
+    }
 
     logger.info(`Password changed for: ${applicant.username}`);
 

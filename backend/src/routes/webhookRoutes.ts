@@ -8,6 +8,11 @@ import { generatePaymentReceipt } from '../utils/pdfGenerator';
 import { sendPaymentReceiptEmail } from '../utils/email';
 import { verifyPayment as verifyPaystackPayment } from '../utils/paystack';
 import { verifyPayment as verifyFlutterwavePayment } from '../utils/flutterwave';
+import { 
+  handlePaystackWebhook, 
+  handleFlutterwaveWebhook, 
+  verifyPaymentManually 
+} from '../controllers/paymentWebhookController';
 
 const router = Router();
 
@@ -343,5 +348,18 @@ router.post('/flutterwave', async (req: Request, res: Response) => {
     });
   }
 });
+
+/**
+ * Student Payment Webhooks
+ */
+
+// Paystack webhook for student payments
+router.post('/student/paystack', handlePaystackWebhook);
+
+// Flutterwave webhook for student payments
+router.post('/student/flutterwave', handleFlutterwaveWebhook);
+
+// Manual payment verification
+router.get('/verify/:gateway/:reference', verifyPaymentManually);
 
 export default router;

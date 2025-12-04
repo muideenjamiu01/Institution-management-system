@@ -81,8 +81,16 @@ export const login = async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
 
-    const student = await prisma.student.findUnique({
-      where: { username: data.username },
+    logger.info(`Student login attempt with username/matricNo: ${data.username}`);
+
+    // Try to find student by username OR matricNo
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { username: data.username },
+          { matricNo: data.username },
+        ],
+      },
       include: {
         department: true,
         program: true,
@@ -90,19 +98,28 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    if (!student || !student.password) {
-      return res.status(401).json({
+    if (!student) {
+      logger.warn(`Student not found with username/matricNo: ${data.username}`);
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid matric number or username. Please check and try again.',
+      });
+    }
+
+    if (!student.password) {
+      logger.warn(`Student ${student.matricNo} has no password set`);
+      return res.status(400).json({
+        success: false,
+        message: 'Your account password is not set. Please contact administration or use "Forgot Password".',
       });
     }
 
     const isPasswordValid = await bcrypt.compare(data.password, student.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Incorrect password. Please try again or use "Forgot password" to reset.',
       });
     }
 
@@ -407,9 +424,9 @@ export const changePassword = async (req: StudentAuthRequest, res: Response) => 
     );
 
     if (!isCurrentPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Current password is incorrect',
+        message: 'Current password is incorrect. Please try again.',
       });
     }
 

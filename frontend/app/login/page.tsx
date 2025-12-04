@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import api from '@/lib/api';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,8 +50,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center p-4 relative">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1920&q=80"
+          alt="Background"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 to-blue-900/85 backdrop-blur-sm" />
+      </div>
+
+      {/* Back to Home */}
+      <Link href="/" className="absolute top-4 left-4 z-10">
+        <Button variant="ghost" className="text-white hover:bg-white/20">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+      </Link>
+
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/95 backdrop-blur-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">IMS Login</CardTitle>
           <CardDescription className="text-center">

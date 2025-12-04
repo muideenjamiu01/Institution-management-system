@@ -13,6 +13,7 @@ import * as courseRegistrationController from '../controllers/courseRegistration
 import * as resultsController from '../controllers/resultsController';
 import * as assignmentController from '../controllers/assignmentController';
 import * as dashboardController from '../controllers/dashboardController';
+import * as studentDashboardController from '../controllers/studentDashboardController';
 import * as documentsController from '../controllers/documentsController';
 import * as profileController from '../controllers/profileController';
 
@@ -105,14 +106,16 @@ router.post('/auth/change-password', authenticateStudent, studentAuthController.
 router.get('/auth/profile', authenticateStudent, studentAuthController.getProfile);
 
 // Dashboard
+router.get('/dashboard', authenticateStudent, studentDashboardController.getOverview);
 router.get('/dashboard/stats', authenticateStudent, dashboardController.getDashboardStats);
-router.get('/dashboard/activities', authenticateStudent, dashboardController.getRecentActivities);
+router.get('/dashboard/activities', authenticateStudent, studentDashboardController.getActivities);
+router.get('/dashboard/alerts', authenticateStudent, studentDashboardController.getAlerts);
 router.get('/dashboard/events', authenticateStudent, dashboardController.getUpcomingEvents);
 
 // Notifications
-router.get('/notifications', authenticateStudent, dashboardController.getNotifications);
-router.patch('/notifications/:id/read', authenticateStudent, dashboardController.markNotificationAsRead);
-router.patch('/notifications/read-all', authenticateStudent, dashboardController.markAllNotificationsAsRead);
+router.get('/notifications', authenticateStudent, studentDashboardController.getNotifications);
+router.patch('/notifications/:id/read', authenticateStudent, studentDashboardController.markNotificationRead);
+router.patch('/notifications/read-all', authenticateStudent, studentDashboardController.markAllNotificationsRead);
 
 // Profile
 router.get('/profile', authenticateStudent, profileController.getProfile);

@@ -1,11 +1,18 @@
-import { Response } from 'express';
-import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
-import prisma from '../config/database';
-import { ApplicantAuthRequest } from '../middleware/applicantAuth';
-import { initializePayment as paystackInitialize, verifyPayment as paystackVerify } from '../utils/paystack';
-import { initializePayment as flutterwaveInitialize, verifyPayment as flutterwaveVerify } from '../utils/flutterwave';
-import { sendEmail, sendPaymentReceiptEmail } from '../utils/email';
+import { Response } from "express";
+import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
+import prisma from "../config/database";
+import logger from "../config/logger";
+import { ApplicantAuthRequest } from "../middleware/applicantAuth";
+import {
+  initializePayment as paystackInitialize,
+  verifyPayment as paystackVerify,
+} from "../utils/paystack";
+import {
+  initializePayment as flutterwaveInitialize,
+  verifyPayment as flutterwaveVerify,
+} from "../utils/flutterwave";
+import { sendEmail, sendPaymentReceiptEmail } from "../utils/email";
 
 const APPLICATION_FEE = 20000;
 const ACCEPTANCE_FEE = 50000;
@@ -291,49 +298,197 @@ export const verifyPayment = async (req: ApplicantAuthRequest, res: Response) =>
         payment.amount,
         receiptUrl
       );
-    } else if (payment.type === 'ACCEPTANCE_FEE') {
+    } else if (payment.type === "ACCEPTANCE_FEE") {
+      // Step 1: Mark acceptance fee as paid
       await prisma.applicant.update({
         where: { id: payment.applicantId },
         data: { acceptanceFeePaid: true },
       });
 
+      // Step 2: Generate matric number if not exists
       const year = new Date().getFullYear();
-      const deptCode = payment.applicant.department?.code || 'GEN';
+      const deptCode = payment.applicant.department?.code || "GEN";
 
-      const lastMatric = await prisma.matricNumber.findFirst({
-        where: {
-          matricNo: {
-            startsWith: `IMS/${year}/${deptCode}/`,
-          },
-        },
-        orderBy: {
-          matricNo: 'desc',
-        },
+      let matricNumber = await prisma.matricNumber.findUnique({
+        where: { applicantId: payment.applicantId },
       });
 
-      let sequence = 1;
-      if (lastMatric) {
-        const lastSequence = parseInt(lastMatric.matricNo.split('/').pop() || '0');
-        sequence = lastSequence + 1;
+      if (!matricNumber) {
+        const lastMatric = await prisma.matricNumber.findFirst({
+          where: {
+            matricNo: {
+              startsWith: `IMS/${year}/${deptCode}/`,
+            },
+          },
+          orderBy: {
+            matricNo: "desc",
+          },
+        });
+
+        let sequence = 1;
+        if (lastMatric) {
+          const lastSequence = parseInt(
+            lastMatric.matricNo.split("/").pop() || "0"
+          );
+          sequence = lastSequence + 1;
+        }
+
+        const matricNo = `IMS/${year}/${deptCode}/${sequence
+          .toString()
+          .padStart(5, "0")}`;
+
+        matricNumber = await prisma.matricNumber.create({
+          data: {
+            applicantId: payment.applicantId,
+            matricNo,
+          },
+        });
       }
 
-      const matricNo = `IMS/${year}/${deptCode}/${sequence.toString().padStart(5, '0')}`;
-
-      await prisma.matricNumber.create({
-        data: {
-          applicantId: payment.applicantId,
-          matricNo,
+      // Step 3: Get applicant with full details
+      const fullApplicant = await prisma.applicant.findUnique({
+        where: { id: payment.applicantId },
+        include: {
+          department: true,
+          program: true,
+          admissionDecision: true,
         },
       });
 
-     const receiptUrl = `${process.env.APPLICANT_PORTAL_URL}/applicant/payments`;
+      if (!fullApplicant) {
+        throw new Error("Applicant not found");
+      }
+
+      logger.info(`Creating student account for applicant ${fullApplicant.email}`);
+      logger.info(`Applicant password exists: ${!!fullApplicant.password}`);
+      logger.info(`Password hash preview: ${fullApplicant.password?.substring(0, 20)}...`);
+
+      // Step 4: Automatically create student account
+      let student = await prisma.student.findUnique({
+        where: { matricNo: matricNumber.matricNo },
+      });
+
+      if (!student && matricNumber && !matricNumber.studentId) {
+        // Get active session for enrollment
+        const activeSession = await prisma.session.findFirst({
+          where: { isActive: true },
+        });
+
+        // Validate required fields
+        if (
+          !fullApplicant.dateOfBirth ||
+          !fullApplicant.gender ||
+          !fullApplicant.address ||
+          !fullApplicant.departmentId
+        ) {
+          throw new Error(
+            "Complete profile required before student account creation"
+          );
+        }
+
+        // Determine current level based on program type
+        let currentLevel = 100; // Default for BSC
+        if (fullApplicant.programType === "ND") currentLevel = 100;
+        if (fullApplicant.programType === "HND") currentLevel = 300;
+        if (fullApplicant.programType === "MSC") currentLevel = 500;
+        if (fullApplicant.programType === "PHD") currentLevel = 700;
+
+        student = await prisma.student.create({
+          data: {
+            username: matricNumber.matricNo,
+            matricNo: matricNumber.matricNo,
+            firstName: fullApplicant.firstName,
+            lastName: fullApplicant.lastName,
+            email: fullApplicant.email,
+            phone: fullApplicant.phone,
+            password: fullApplicant.password || "", // Transfer password
+            dateOfBirth: fullApplicant.dateOfBirth,
+            gender: fullApplicant.gender,
+            address: fullApplicant.address,
+            departmentId: fullApplicant.departmentId,
+            programId: fullApplicant.programId,
+            currentLevel,
+            currentSessionId: activeSession?.id,
+            status: "ACTIVE",
+            acceptanceFeePaid: true,
+          },
+        });
+
+        logger.info(`Student account created successfully with matricNo: ${matricNumber.matricNo}`);
+        logger.info(`Student password transferred: ${!!student.password}`);
+
+        // Link matric number to student
+        await prisma.matricNumber.update({
+          where: { id: matricNumber.id },
+          data: { studentId: student.id },
+        });
+
+        // Create acceptance fee invoice for student records
+        if (activeSession) {
+          const invoiceNo = `INV-${year}-ACC-${student.id
+            .toString()
+            .padStart(5, "0")}`;
+
+          await prisma.invoice.create({
+            data: {
+              invoiceNo,
+              studentId: student.id,
+              sessionId: activeSession.id,
+              type: "ACCEPTANCE_FEE",
+              description: "Acceptance Fee",
+              amount: payment.amount,
+              amountPaid: payment.amount,
+              balance: 0,
+              level: currentLevel,
+              status: "PAID",
+              cardPayment: true,
+              walletPayment: false,
+            },
+          });
+
+          // Create payment record in student payments
+          await prisma.payment.create({
+            data: {
+              studentId: student.id,
+              invoiceId: (
+                await prisma.invoice.findUnique({
+                  where: { invoiceNo },
+                  select: { id: true },
+                })
+              )!.id,
+              amount: payment.amount,
+              method: payment.method,
+              reference: `STU-${reference}`,
+              status: "PAID",
+              paidAt: updatedPayment.paidAt,
+              gatewayResponse: updatedPayment.gatewayResponse,
+            },
+          });
+        }
+
+        // Create welcome notification for student
+        await prisma.notification.create({
+          data: {
+            studentId: student.id,
+            title: "Welcome to Student Portal!",
+            message: `Congratulations! Your acceptance fee has been processed. Your matric number is ${matricNumber.matricNo}. Please upload required documents to enable course registration.`,
+            type: "SUCCESS",
+          },
+        });
+
+        logger.info(
+          `Applicant ${payment.applicantId} automatically converted to student ${student.id}`
+        );
+      }
+
+      const receiptUrl = `${process.env.APPLICANT_PORTAL_URL}/applicant/payments`;
       await sendPaymentReceiptEmail(
         payment.applicant.email,
         `${payment.applicant.firstName} ${payment.applicant.lastName}`,
         reference,
         payment.amount,
         receiptUrl,
-        matricNo
+        matricNumber.matricNo
       );
     }
 

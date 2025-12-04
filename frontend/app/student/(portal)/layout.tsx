@@ -69,8 +69,23 @@ export default function StudentLayout({
   }
 
   const getInitials = () => {
-    if (!student) return 'ST';
+    if (!student || !student.firstName || !student.lastName) return 'ST';
     return `${student.firstName[0]}${student.lastName[0]}`.toUpperCase();
+  };
+
+  const getProfilePictureUrl = () => {
+    if (!student?.profilePicture) return undefined;
+    
+    // If it's already a full URL, return as is
+    if (student.profilePicture.startsWith('http')) {
+      return student.profilePicture;
+    }
+    
+    // Otherwise, prepend the API base URL
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const fullUrl = `${baseUrl}${student.profilePicture}`;
+    console.log('Profile Picture URL (Layout):', fullUrl); // Debug log
+    return fullUrl;
   };
 
   return (
@@ -136,7 +151,7 @@ export default function StudentLayout({
           <div className="p-4 border-t">
             <div className="flex items-center space-x-3 px-3 py-2">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={student?.profilePicture || undefined} />
+                <AvatarImage src={getProfilePictureUrl()} />
                 <AvatarFallback>{getInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
@@ -175,7 +190,7 @@ export default function StudentLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={student?.profilePicture || undefined} />
+                    <AvatarImage src={getProfilePictureUrl()} />
                     <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                   <span className="hidden md:inline text-sm">
@@ -186,12 +201,12 @@ export default function StudentLayout({
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link href="/student/profile" className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem asChild>
                   <Link href="/student/settings" className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />

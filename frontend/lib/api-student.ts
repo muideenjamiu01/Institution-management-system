@@ -86,8 +86,12 @@ studentApi.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
 
-    // If error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Don't trigger token refresh on login or register endpoints
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
+                          originalRequest.url?.includes('/auth/register');
+
+    // If error is 401 and we haven't tried to refresh yet, and it's not an auth endpoint
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Queue the request while token is being refreshed
         return new Promise((resolve, reject) => {
@@ -186,6 +190,11 @@ export const authApi = {
 
 // ===== Dashboard API =====
 export const dashboardApi = {
+  getOverview: async () => {
+    const response = await studentApi.get('/dashboard');
+    return response.data;
+  },
+
   getStats: async () => {
     const response = await studentApi.get('/dashboard/stats');
     return response.data;
@@ -196,18 +205,28 @@ export const dashboardApi = {
     return response.data;
   },
 
+  getAlerts: async () => {
+    const response = await studentApi.get('/dashboard/alerts');
+    return response.data;
+  },
+
   getUpcomingDeadlines: async () => {
     const response = await studentApi.get('/dashboard/deadlines');
     return response.data;
   },
 
-  getNotifications: async () => {
-    const response = await studentApi.get('/dashboard/notifications');
+  getNotifications: async (params?: { page?: number; limit?: number; type?: string }) => {
+    const response = await studentApi.get('/notifications', { params });
     return response.data;
   },
 
   markNotificationAsRead: async (notificationId: number) => {
-    const response = await studentApi.patch(`/dashboard/notifications/${notificationId}/read`);
+    const response = await studentApi.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsAsRead: async () => {
+    const response = await studentApi.patch('/notifications/read-all');
     return response.data;
   },
 
@@ -342,21 +361,11 @@ export const paymentsApi = {
     return response.data;
   },
 
-  getInvoiceDetails: async (invoiceId: number) => {
-    const response = await studentApi.get(`/payments/invoices/${invoiceId}`);
-    return response.data;
-  },
-
   initializePayment: async (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
     const response = await studentApi.post('/payments/initialize', {
       invoiceId,
       method,
     });
-    return response.data;
-  },
-
-  verifyPayment: async (reference: string) => {
-    const response = await studentApi.post('/payments/verify', { reference });
     return response.data;
   },
 
@@ -376,9 +385,14 @@ export const paymentsApi = {
   },
 
   downloadReceipt: async (paymentId: number) => {
-    const response = await studentApi.get(`/payments/${paymentId}/receipt`, {
+    const response = await studentApi.get(`/payments/receipt/${paymentId}`, {
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  getPaymentStats: async () => {
+    const response = await studentApi.get('/payments/stats');
     return response.data;
   },
 };

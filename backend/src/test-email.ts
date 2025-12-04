@@ -21,8 +21,7 @@ async function testEmails() {
   try {
     const result1 = await sendAdmissionApprovalEmail(
       testEmail,
-      'John Doe',
-      'IMS/2025/00001'
+      'John Doe'
     );
     
     if (result1.success) {

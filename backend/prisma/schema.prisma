@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -368,7 +368,7 @@ model Invoice {
   @@index([studentId])
   @@index([sessionId])
   @@index([status])
-  @@index([semesterId], map: "invoices_semesterId_fkey")
+  @@index([semesterId], map: "invoices_semesterId_idx")
   @@map("invoices")
 }
 
@@ -415,7 +415,7 @@ model Assignment {
   @@index([courseId])
   @@index([sessionId])
   @@index([dueDate])
-  @@index([semesterId], map: "assignments_semesterId_fkey")
+  @@index([semesterId], map: "assignments_semesterId_idx")
   @@map("assignments")
 }
 

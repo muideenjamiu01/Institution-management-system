@@ -47,7 +47,15 @@ export const createExam = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const exam = await prisma.exam.create({
-      data,
+      data: {
+        courseId: data.courseId,
+        title: data.title,
+        description: data.description,
+        examDate: data.examDate,
+        maxScore: data.maxScore,
+        academicYear: data.academicYear,
+        semester: data.semester,
+      },
       include: {
         course: {
           include: {

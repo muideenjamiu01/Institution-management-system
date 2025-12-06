@@ -62,7 +62,12 @@ export const createRegistrationWindow = async (req: AuthRequest, res: Response) 
 
     // Create new window
     const newWindow = await prisma.registrationWindow.create({
-      data,
+      data: {
+        sessionId: data.sessionId,
+        semesterId: data.semesterId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+      },
       include: {
         session: true,
         semester: true,

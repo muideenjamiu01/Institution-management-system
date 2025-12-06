@@ -35,7 +35,15 @@ export const createCourse = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     const course = await prisma.course.create({
-      data,
+      data: {
+        code: data.code,
+        title: data.title,
+        description: data.description,
+        credits: data.credits,
+        departmentId: data.departmentId,
+        level: data.level,
+        semester: data.semester,
+      },
       include: {
         department: true,
       },
@@ -220,7 +228,12 @@ export const registerCourse = async (req: AuthRequest, res: Response): Promise<v
     }
 
     const registration = await prisma.courseRegistration.create({
-      data,
+      data: {
+        studentId: data.studentId,
+        courseId: data.courseId,
+        academicYear: data.academicYear,
+        semester: data.semester,
+      },
       include: {
         student: true,
         course: true,

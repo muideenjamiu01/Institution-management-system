@@ -49,7 +49,15 @@ export const createApplicant = async (req: AuthRequest, res: Response): Promise<
 
     const applicant = await prisma.applicant.create({
       data: {
-        ...data,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        address: data.address,
+        previousSchool: data.previousSchool,
+        gradeAverage: data.gradeAverage,
         username,
         admissionDecision: {
           create: {

@@ -93,6 +93,79 @@ async function seedDepartments() {
   console.log('✓ Departments seeded');
 }
 
+async function seedPrograms() {
+  console.log('Seeding programs...');
+  const depts = await prisma.department.findMany();
+  
+  const programsByDepartment = {
+    'Computer Science': [
+      { name: 'Computer Science', code: 'CSC', duration: 4, description: 'Bachelor of Science in Computer Science' },
+      { name: 'Software Engineering', code: 'SWE', duration: 4, description: 'Bachelor of Science in Software Engineering' },
+      { name: 'Information Technology', code: 'IT', duration: 4, description: 'Bachelor of Science in Information Technology' },
+      { name: 'Cybersecurity', code: 'CYB', duration: 4, description: 'Bachelor of Science in Cybersecurity' },
+    ],
+    'Electrical Engineering': [
+      { name: 'Electrical Engineering', code: 'EEE', duration: 5, description: 'Bachelor of Engineering in Electrical Engineering' },
+      { name: 'Electronics Engineering', code: 'ECE', duration: 4, description: 'Bachelor of Engineering in Electronics Engineering' },
+      { name: 'Telecommunications Engineering', code: 'TEE', duration: 4, description: 'Bachelor of Engineering in Telecommunications' },
+    ],
+    'Mechanical Engineering': [
+      { name: 'Mechanical Engineering', code: 'MEE', duration: 5, description: 'Bachelor of Engineering in Mechanical Engineering' },
+      { name: 'Automotive Engineering', code: 'AUE', duration: 4, description: 'Bachelor of Engineering in Automotive Engineering' },
+      { name: 'Manufacturing Engineering', code: 'MFE', duration: 4, description: 'Bachelor of Engineering in Manufacturing' },
+    ],
+    'Civil Engineering': [
+      { name: 'Civil Engineering', code: 'CVE', duration: 5, description: 'Bachelor of Engineering in Civil Engineering' },
+      { name: 'Structural Engineering', code: 'STE', duration: 4, description: 'Bachelor of Engineering in Structural Engineering' },
+      { name: 'Environmental Engineering', code: 'ENE', duration: 4, description: 'Bachelor of Engineering in Environmental Engineering' },
+    ],
+    'Business Administration': [
+      { name: 'Business Administration', code: 'BUS', duration: 4, description: 'Bachelor of Business Administration' },
+      { name: 'Marketing', code: 'MKT', duration: 4, description: 'Bachelor of Science in Marketing' },
+      { name: 'Human Resource Management', code: 'HRM', duration: 4, description: 'Bachelor of Science in Human Resource Management' },
+      { name: 'Finance', code: 'FIN', duration: 4, description: 'Bachelor of Science in Finance' },
+    ],
+    'Economics': [
+      { name: 'Economics', code: 'ECO', duration: 4, description: 'Bachelor of Science in Economics' },
+      { name: 'Development Economics', code: 'DEV', duration: 4, description: 'Bachelor of Science in Development Economics' },
+    ],
+    'Mathematics': [
+      { name: 'Mathematics', code: 'MAT', duration: 4, description: 'Bachelor of Science in Mathematics' },
+      { name: 'Applied Mathematics', code: 'APM', duration: 4, description: 'Bachelor of Science in Applied Mathematics' },
+      { name: 'Statistics', code: 'STA', duration: 4, description: 'Bachelor of Science in Statistics' },
+    ],
+    'Physics': [
+      { name: 'Physics', code: 'PHY', duration: 4, description: 'Bachelor of Science in Physics' },
+      { name: 'Applied Physics', code: 'APP', duration: 4, description: 'Bachelor of Science in Applied Physics' },
+    ],
+    'Chemistry': [
+      { name: 'Chemistry', code: 'CHE', duration: 4, description: 'Bachelor of Science in Chemistry' },
+      { name: 'Biochemistry', code: 'BCH', duration: 4, description: 'Bachelor of Science in Biochemistry' },
+    ],
+    'Biology': [
+      { name: 'Biology', code: 'BIO', duration: 4, description: 'Bachelor of Science in Biology' },
+      { name: 'Microbiology', code: 'MCB', duration: 4, description: 'Bachelor of Science in Microbiology' },
+      { name: 'Biotechnology', code: 'BTN', duration: 4, description: 'Bachelor of Science in Biotechnology' },
+    ],
+  };
+
+  for (const dept of depts) {
+    const programs = programsByDepartment[dept.name as keyof typeof programsByDepartment];
+    if (programs) {
+      for (const program of programs) {
+        await prisma.program.create({
+          data: {
+            ...program,
+            departmentId: dept.id,
+          },
+        });
+      }
+    }
+  }
+  
+  console.log('✓ Programs seeded');
+}
+
 async function seedApplicants() {
   console.log(`Seeding ${TOTAL_APPLICANTS} applicants...`);
   const applicants = [];
@@ -329,6 +402,7 @@ async function main() {
     // Seed in order
     await seedUsers();
     await seedDepartments();
+    await seedPrograms();
     await seedApplicants();
     await seedStudents();
     await seedCourses();

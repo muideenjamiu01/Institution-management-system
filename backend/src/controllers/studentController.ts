@@ -38,7 +38,15 @@ export const createStudent = async (req: AuthRequest, res: Response): Promise<vo
     
     const student = await prisma.student.create({
       data: {
-        ...restData,
+        matricNo: data.matricNo,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        address: data.address,
+        currentLevel: data.currentLevel,
         username: data.matricNo, // Use matricNo as username for manually created students
         status: (status as any) || 'ACTIVE',
         department: {

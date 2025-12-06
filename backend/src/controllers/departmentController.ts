@@ -26,7 +26,11 @@ export const createDepartment = async (req: AuthRequest, res: Response): Promise
     }
 
     const department = await prisma.department.create({
-      data,
+      data: {
+        name: data.name,
+        code: data.code,
+        description: data.description,
+      },
     });
 
     logger.info(`New department created: ${department.name}`);

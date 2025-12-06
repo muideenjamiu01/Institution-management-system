@@ -46,6 +46,7 @@ export default function ApplicantLoginPage() {
       setIsLoading(true);
       setError('');
       await login(data.username, data.password);
+  
     } catch (err: any) {
       setError(err.message || 'Invalid credentials. Please try again.');
     } finally {

@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Search, Clock, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BookOpen, Search, Clock, Users, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import CourseRegistrationPortal from './enhanced-registration';
 
 interface Course {
   id: number;
@@ -134,8 +135,12 @@ export default function CoursesPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="available" className="space-y-4">
+      <Tabs defaultValue="enhanced-registration" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="enhanced-registration" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Course Registration
+          </TabsTrigger>
           <TabsTrigger value="available">
             Available Courses ({(availableCourses || []).length})
           </TabsTrigger>
@@ -143,6 +148,10 @@ export default function CoursesPage() {
             My Courses ({(registeredCourses || []).length})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="enhanced-registration">
+          <CourseRegistrationPortal />
+        </TabsContent>
 
         <TabsContent value="available" className="space-y-4">
           <div className="flex items-center space-x-2">

@@ -36,11 +36,18 @@ export default function PaymentVerifyPage() {
       onSuccess: async (response) => {
         if (response.data?.status === "PAID") {
           setPaymentInfo(response.data);
-          // Invalidate all queries and force immediate refetch
+          // Invalidate queries to mark them stale, but don't force immediate refetch
           await queryClient.invalidateQueries({ queryKey: applicantKeys.all });
-          await queryClient.refetchQueries({ queryKey: applicantKeys.profile(), type: 'active' });
-          // Refresh profile in auth context after queries are updated
-          await refreshProfile();
+          
+          // Use single source of truth - either React Query OR auth context, not both
+          try {
+            // Try React Query first (more efficient with caching)
+            await queryClient.refetchQueries({ queryKey: applicantKeys.profile(), type: 'active' });
+          } catch (error) {
+            // Fallback to auth context refresh if React Query fails
+            console.log('React Query refetch failed, using auth context');
+            await refreshProfile();
+          }
         }
       },
     });

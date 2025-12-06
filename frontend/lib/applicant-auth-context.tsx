@@ -121,6 +121,15 @@ export const ApplicantAuthProvider = ({ children }: { children: ReactNode }) => 
       // Only refresh if user is authenticated
       if (!applicant) return;
       
+      // Add rate limiting to prevent excessive calls
+      const now = Date.now();
+      const lastRefresh = parseInt(localStorage.getItem('lastAuthProfileRefresh') || '0');
+      
+      if (now - lastRefresh < 30000) { // 30 second cooldown
+        console.log('Auth profile refresh throttled');
+        return;
+      }
+      
       const response = await profileApi.getProfile();
       const freshApplicantData = response.data;
       
@@ -132,8 +141,14 @@ export const ApplicantAuthProvider = ({ children }: { children: ReactNode }) => 
       
       setApplicant(updatedData);
       setStoredUser(updatedData);
+      localStorage.setItem('lastAuthProfileRefresh', now.toString());
     } catch (error: any) {
       console.error('Failed to refresh profile:', error);
+      // Don't retry on 429 errors to prevent further rate limiting
+      if (error?.response?.status === 429) {
+        console.warn('Rate limited - skipping profile refresh');
+        return;
+      }
       // Don't clear user data on refresh failure
       // This prevents logout on API errors
     }

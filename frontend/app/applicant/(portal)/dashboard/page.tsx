@@ -33,23 +33,23 @@ export default function ApplicantDashboardPage() {
   const { applicant, updateApplicant } = useApplicantAuth();
   const { data: profileData, refetch, isRefetching } = useApplicantProfile();
 
-  // Only refetch on visibility change if data is older than 5 minutes
+  // Throttled visibility change handler - only refetch if data is stale
   useEffect(() => {
-    let lastFetchTime = 0;
-    
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        const lastRefreshKey = 'lastDashboardRefresh';
         const now = Date.now();
-        // Only refetch if more than 5 minutes have passed since last fetch
-        if (now - lastFetchTime > 5 * 60 * 1000) {
+        const lastRefresh = parseInt(localStorage.getItem(lastRefreshKey) || '0');
+        
+        // Only refetch if more than 10 minutes have passed
+        if (now - lastRefresh > 10 * 60 * 1000) {
           refetch();
-          lastFetchTime = now;
+          localStorage.setItem(lastRefreshKey, now.toString());
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -62,16 +62,20 @@ export default function ApplicantDashboardPage() {
     }
   }, [profileData, updateApplicant]);
 
-  // Use throttled refresh to prevent excessive API calls
+  // Enhanced throttled refresh with user feedback
   const handleRefresh = () => {
     const now = Date.now();
-    const lastRefreshKey = 'lastProfileRefresh';
+    const lastRefreshKey = 'lastManualRefresh';
     const lastRefresh = parseInt(localStorage.getItem(lastRefreshKey) || '0');
     
-    // Only allow refresh every 30 seconds
+    // Only allow manual refresh every 30 seconds
     if (now - lastRefresh > 30000) {
       refetch();
       localStorage.setItem(lastRefreshKey, now.toString());
+    } else {
+      // Show user feedback when throttled
+      const remainingTime = Math.ceil((30000 - (now - lastRefresh)) / 1000);
+      console.log(`Please wait ${remainingTime} seconds before refreshing again`);
     }
   };
 

@@ -16,6 +16,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:safe": "ts-node prisma/seed-safe.ts",
     "prisma:seed:student": "ts-node prisma/seedStudentPortal.ts",
     "prisma:studio": "prisma studio"
   },

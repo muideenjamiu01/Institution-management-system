@@ -385,7 +385,7 @@ async function main() {
   console.log('🌱 Starting database seed...\n');
 
   try {
-    // Clear existing data
+    // Clear existing data (preserve manually registered applicants)
     console.log('Clearing existing data...');
     await prisma.score.deleteMany();
     await prisma.exam.deleteMany();
@@ -393,11 +393,36 @@ async function main() {
     await prisma.course.deleteMany();
     await prisma.student.deleteMany();
     await prisma.matricNumber.deleteMany();
-    await prisma.admissionDecision.deleteMany();
-    await prisma.applicant.deleteMany();
-    await prisma.department.deleteMany();
-    await prisma.user.deleteMany();
-    console.log('✓ Existing data cleared\n');
+    
+    // Only delete admission decisions for test applicants (not real ones)
+    await prisma.admissionDecision.deleteMany({
+      where: {
+        applicant: {
+          username: {
+            endsWith: '@applicant.com' // Only delete test applicants
+          }
+        }
+      }
+    });
+    
+    // Only delete test applicants (preserve real registrations)
+    await prisma.applicant.deleteMany({
+      where: {
+        email: {
+          endsWith: '@applicant.com' // Only delete test applicants
+        }
+      }
+    });
+    
+    // Only delete test departments and users if they don't have real data
+    const realApplicantsCount = await prisma.applicant.count();
+    if (realApplicantsCount === 0) {
+      await prisma.program.deleteMany();
+      await prisma.department.deleteMany();
+      await prisma.user.deleteMany();
+    }
+    
+    console.log('✓ Existing test data cleared (real data preserved)\n');
 
     // Seed in order
     await seedUsers();

@@ -21,6 +21,7 @@ import webhookRoutes from './routes/webhookRoutes';
 import applicantPaymentRoutes from './routes/applicantPaymentRoutes';
 import studentPaymentRoutes from './routes/studentPaymentRoutes';
 import adminPaymentRoutes from './routes/adminPaymentRoutes';
+import enhancedCourseRegistrationRoutes from './routes/enhancedCourseRegistrationRoutes';
 
 dotenv.config();
 
@@ -49,8 +50,8 @@ const limiter = rateLimit({
 
 // Lenient rate limit for profile endpoints (higher frequency allowed)
 const profileLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // 500 requests per 15 minutes for profile endpoints
+  windowMs: 5 * 60 * 1000, // 5 minutes (shorter window)
+  max: 200, // 200 requests per 5 minutes for profile endpoints (more generous)
   message: 'Too many profile requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -65,12 +66,26 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/api/', limiter);
+// Apply specific limiters first (more specific paths)
 app.use('/api/applicant/profile', profileLimiter);
 app.use('/api/student/profile', profileLimiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/applicant/auth/', authLimiter);
 app.use('/api/student/auth/', authLimiter);
+
+// Apply general limiter to remaining /api/ paths (exclude already handled paths)
+app.use('/api/', (req, res, next) => {
+  const path = req.path;
+  // Skip general limiter for paths that already have specific limiters
+  if (path.startsWith('/applicant/profile') || 
+      path.startsWith('/student/profile') || 
+      path.startsWith('/auth/') || 
+      path.startsWith('/applicant/auth/') || 
+      path.startsWith('/student/auth/')) {
+    return next();
+  }
+  limiter(req, res, next);
+});
 
 // Body parser
 app.use(express.json());
@@ -100,6 +115,9 @@ app.use('/api/departments', departmentRoutes);
 
 // Student Portal Routes
 app.use('/api/student', studentPortalRoutes);
+
+// Enhanced Course Registration Routes
+app.use('/api/course-registration', enhancedCourseRegistrationRoutes);
 
 // Applicant Portal Routes
 app.use('/api/applicant/auth', applicantAuthRoutes);

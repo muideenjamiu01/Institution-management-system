@@ -14,6 +14,7 @@ import {
   Menu,
   Building2,
   CreditCard,
+  Calendar,
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -51,6 +52,7 @@ export default function DashboardLayout({
     { name: 'Students', href: '/dashboard/students', icon: Users },
     { name: 'Departments', href: '/dashboard/departments', icon: Building2 },
     { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
+    { name: 'Course Registration', href: '/dashboard/course-registration', icon: Calendar },
     { name: 'Exams', href: '/dashboard/exams', icon: GraduationCap },
     { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
   ];

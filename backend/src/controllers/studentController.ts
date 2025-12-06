@@ -65,6 +65,7 @@ export const getStudents = async (req: AuthRequest, res: Response): Promise<void
     const departmentId = req.query.departmentId as string;
     const search = req.query.search as string;
     const level = req.query.level as string;
+    const status = req.query.status as string;
 
     const skip = (page - 1) * limit;
 
@@ -76,6 +77,10 @@ export const getStudents = async (req: AuthRequest, res: Response): Promise<void
 
     if (level) {
       where.currentLevel = parseInt(level);
+    }
+
+    if (status) {
+      where.status = status;
     }
 
     if (search) {

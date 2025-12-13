@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useApplicantAuth } from "@/lib/applicant-auth-context";
-import { useVerifyPayment, applicantKeys } from "@/lib/hooks/useApplicantQueries";
+import { applicantKeys } from "@/lib/hooks/useApplicantQueries";
+import { paymentApi } from "@/lib/api-applicant";
 import {
   Card,
   CardContent,
@@ -24,27 +25,58 @@ export default function PaymentVerifyPage() {
   const queryClient = useQueryClient();
   const { refreshProfile } = useApplicantAuth();
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
-  const verifyPaymentMutation = useVerifyPayment();
+  const [isVerified, setIsVerified] = useState(false);
+  const verificationAttempted = useRef(false);
+  
+  // Create a custom mutation without automatic toasts for verification page
+  const verifyPaymentMutation = useMutation({
+    mutationFn: paymentApi.verifyPayment,
+  });
 
   useEffect(() => {
     const reference = searchParams.get("reference");
-    if (!reference) {
+    
+    // Reset states when reference changes
+    if (reference && verificationAttempted.current && !isVerified) {
+      verificationAttempted.current = false;
+      setIsVerified(false);
+      setPaymentInfo(null);
+    }
+    
+    // Prevent multiple calls for the same reference
+    if (!reference || isVerified || verifyPaymentMutation.isPending || verificationAttempted.current) {
       return;
     }
+
+    verificationAttempted.current = true; // Mark that we've attempted verification
 
     verifyPaymentMutation.mutate(reference, {
       onSuccess: async (response) => {
         if (response.data?.status === "PAID") {
           setPaymentInfo(response.data);
-          // Invalidate all queries and force immediate refetch
+          setIsVerified(true); // Mark as verified to prevent further calls
+          
+          // Invalidate queries to mark them stale, but don't force immediate refetch
           await queryClient.invalidateQueries({ queryKey: applicantKeys.all });
-          await queryClient.refetchQueries({ queryKey: applicantKeys.profile(), type: 'active' });
-          // Refresh profile in auth context after queries are updated
-          await refreshProfile();
+          
+          // Use single source of truth - either React Query OR auth context, not both
+          try {
+            // Try React Query first (more efficient with caching)
+            await queryClient.refetchQueries({ queryKey: applicantKeys.profile(), type: 'active' });
+          } catch (error) {
+            // Fallback to auth context refresh if React Query fails
+            console.log('React Query refetch failed, using auth context');
+            await refreshProfile();
+          }
+        } else {
+          setIsVerified(true); // Even if payment failed, mark as verified to stop retrying
         }
       },
+      onError: () => {
+        setIsVerified(true); // Mark as verified even on error to prevent infinite retries
+      },
     });
-  }, [searchParams, queryClient, refreshProfile]);
+  }, [searchParams.get("reference")]);
 
   const getPaymentTypeMessage = () => {
     if (!paymentInfo) return "";
@@ -59,7 +91,7 @@ export default function PaymentVerifyPage() {
     return "";
   };
 
-  const status = verifyPaymentMutation.isPending 
+  const status = verifyPaymentMutation.isPending || !isVerified
     ? "verifying" 
     : verifyPaymentMutation.isSuccess && paymentInfo?.status === "PAID"
     ? "success"

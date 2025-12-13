@@ -123,7 +123,7 @@ export default function ApplicationFormPage() {
     };
     fetchDepartments();
   }, [toast]);
-
+ 
   // Fetch programs when department is selected
   useEffect(() => {
     if (selectedDepartmentId) {

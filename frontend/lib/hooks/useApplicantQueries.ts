@@ -12,17 +12,35 @@ export const applicantKeys = {
   paymentHistory: () => [...applicantKeys.payments(), 'history'] as const,
 };
 
+// Rate limiting helper
+let lastProfileFetch = 0;
+const PROFILE_FETCH_COOLDOWN = 30000; // 30 seconds minimum between fetches
+
+const rateLimitedProfileFetch = async () => {
+  const now = Date.now();
+  if (now - lastProfileFetch < PROFILE_FETCH_COOLDOWN) {
+    throw new Error('Rate limited: Please wait before refreshing again');
+  }
+  lastProfileFetch = now;
+  return profileApi.getProfile();
+};
+
 // ===== Profile Hooks =====
-export const useApplicantProfile = () => {
+export const useApplicantProfile = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: applicantKeys.profile(),
-    queryFn: profileApi.getProfile,
-    staleTime: 1000 * 60 * 10, // 10 minutes - cache for longer
-    gcTime: 1000 * 60 * 30, // 30 minutes in memory
+    queryFn: rateLimitedProfileFetch,
+    staleTime: 1000 * 60 * 15, // 15 minutes - longer cache
+    gcTime: 1000 * 60 * 60, // 1 hour in memory
     refetchOnWindowFocus: false, // Don't auto-refetch on focus
     refetchOnMount: false, // Don't refetch on mount if data is fresh
     refetchInterval: false, // Disable automatic refetching
-    retry: 2, // Only retry failed requests twice
+    retry: (failureCount, error: any) => {
+      // Don't retry on 429 errors
+      if (error?.response?.status === 429) return false;
+      return failureCount < 2;
+    },
+    enabled: options?.enabled ?? true,
   });
 };
 

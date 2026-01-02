@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { profileApi, applicationApi, paymentApi } from '@/lib/api-applicant';
+import { profileApi, applicationApi, paymentApi, documentApi } from '@/lib/api-applicant';
 import { useToast } from '@/components/ui/use-toast';
 
 // Query Keys
@@ -10,6 +10,7 @@ export const applicantKeys = {
   applicationStatus: () => [...applicantKeys.application(), 'status'] as const,
   payments: () => [...applicantKeys.all, 'payments'] as const,
   paymentHistory: () => [...applicantKeys.payments(), 'history'] as const,
+  documents: () => [...applicantKeys.all, 'documents'] as const,
 };
 
 // Rate limiting helper
@@ -191,6 +192,62 @@ export const useVerifyPayment = () => {
       toast({
         title: 'Error',
         description: error.response?.data?.message || 'Failed to verify payment',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+// Document Upload Hooks
+export const useUploadDocuments = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: documentApi.uploadDocuments,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: applicantKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: applicantKeys.profile() });
+      toast({
+        title: 'Success',
+        description: 'Documents uploaded successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to upload documents',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useGetDocuments = () => {
+  return useQuery({
+    queryKey: applicantKeys.documents(),
+    queryFn: documentApi.getDocuments,
+  });
+};
+
+export const useDeleteDocument = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: documentApi.deleteDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: applicantKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: applicantKeys.profile() });
+      toast({
+        title: 'Success',
+        description: 'Document deleted successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to delete document',
         variant: 'destructive',
       });
     },

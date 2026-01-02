@@ -8,8 +8,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { FileText, Image, Download, Eye } from 'lucide-react';
 
 interface ApplicantDetailsModalProps {
   applicant: any;
@@ -23,6 +25,9 @@ export default function ApplicantDetailsModal({
   onClose,
 }: ApplicantDetailsModalProps) {
   if (!applicant) return null;
+
+  // Base URL for file serving (without /api suffix)
+  const fileBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -223,6 +228,207 @@ export default function ApplicantDetailsModal({
               </div>
             </>
           )}
+
+          {/* Documents Section */}
+          <Separator />
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Documents</h3>
+            <div className="grid gap-3">
+              {/* Passport Photo */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Image className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-medium">Passport Photo</p>
+                    {applicant.passportPhoto ? (
+                      <Badge variant="secondary" className="text-green-600 mt-1">
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 mt-1">
+                        Not uploaded
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {applicant.passportPhoto && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = `${fileBaseUrl}${applicant.passportPhoto}`;
+                          link.target = '_blank';
+                          link.rel = 'noopener noreferrer';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`${fileBaseUrl}${applicant.passportPhoto}`);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `passport_${applicant.firstName}_${applicant.lastName}.${applicant.passportPhoto.split('.').pop()}`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error('Download failed:', error);
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Academic Document */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium">Academic Document</p>
+                    <p className="text-xs text-gray-500">ND/HND/BSC Result</p>
+                    {applicant.academicDocument ? (
+                      <Badge variant="secondary" className="text-green-600 mt-1">
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 mt-1">
+                        Not uploaded
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {applicant.academicDocument && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = `${fileBaseUrl}${applicant.academicDocument}`;
+                          link.target = '_blank';
+                          link.rel = 'noopener noreferrer';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`${fileBaseUrl}${applicant.academicDocument}`);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `academic_${applicant.firstName}_${applicant.lastName}.${applicant.academicDocument.split('.').pop()}`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error('Download failed:', error);
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Document */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-purple-500" />
+                  <div>
+                    <p className="text-sm font-medium">Additional Document</p>
+                    <p className="text-xs text-gray-500">Supporting document</p>
+                    {applicant.additionalDocument ? (
+                      <Badge variant="secondary" className="text-green-600 mt-1">
+                        Uploaded
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 mt-1">
+                        Not uploaded
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {applicant.additionalDocument && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = `${fileBaseUrl}${applicant.additionalDocument}`;
+                          link.target = '_blank';
+                          link.rel = 'noopener noreferrer';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`${fileBaseUrl}${applicant.additionalDocument}`);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `additional_${applicant.firstName}_${applicant.lastName}.${applicant.additionalDocument.split('.').pop()}`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (error) {
+                            console.error('Download failed:', error);
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

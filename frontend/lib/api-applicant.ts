@@ -305,3 +305,25 @@ export const paymentApi = {
     return response.data;
   },
 };
+
+// Document/Upload API
+export const documentApi = {
+  uploadDocuments: async (formData: FormData) => {
+    const response = await applicantApi.post('/upload/documents', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  getDocuments: async () => {
+    const response = await applicantApi.get('/upload/documents');
+    return response.data;
+  },
+
+  deleteDocument: async (documentType: string) => {
+    const response = await applicantApi.delete(`/upload/documents/${documentType}`);
+    return response.data;
+  },
+};

@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import ProfilePicture from '@/components/ProfilePicture';
 
 const navigation = [
   { name: 'Dashboard', href: '/applicant/dashboard', icon: Home },
@@ -113,11 +114,11 @@ export default function ApplicantPortalLayout({
           {/* User Profile Section */}
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarFallback className="bg-purple-600 text-white">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
+              <ProfilePicture
+                firstName={applicant.firstName}
+                lastName={applicant.lastName}
+                size="md"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {applicant.firstName} {applicant.lastName}
@@ -166,11 +167,11 @@ export default function ApplicantPortalLayout({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-purple-600 text-white text-xs">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ProfilePicture
+                      firstName={applicant.firstName}
+                      lastName={applicant.lastName}
+                      size="sm"
+                    />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">

@@ -30,6 +30,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import DocumentUpload from "@/components/DocumentUpload";
 
 const applicationSchema = z.object({
   dateOfBirth: z.string().min(1, "Date of birth is required"),
@@ -520,6 +521,9 @@ export default function ApplicationFormPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Document Upload Section */}
+      <DocumentUpload />
     </div>
   );
 }

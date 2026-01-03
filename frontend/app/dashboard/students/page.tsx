@@ -20,13 +20,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,8 +31,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '@/components/ui/use-toast';
-import { Search, Eye, Trash2, Filter, X, User, Mail, Phone, Calendar, MapPin } from 'lucide-react';
+import { Search, Eye, Trash2, Filter, X } from 'lucide-react';
 import api from '@/lib/api';
+import StudentDetailsModal from '@/components/StudentDetailsModal';
 
 interface Student {
   id: number;
@@ -422,122 +416,13 @@ export default function StudentsPage() {
           )}
         </Card>
       )}
+      
       {/* Student Details Modal */}
-      <Dialog open={showStudentDetails} onOpenChange={setShowStudentDetails}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Student Details
-            </DialogTitle>
-            <DialogDescription>
-              Complete information for {selectedStudent?.firstName} {selectedStudent?.lastName}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedStudent && (
-            <div className="space-y-6">
-              {/* Personal Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Personal Information
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Matric No:</strong> {selectedStudent.matricNo}</div>
-                    <div><strong>Name:</strong> {selectedStudent.firstName} {selectedStudent.lastName}</div>
-                    <div><strong>Gender:</strong> {selectedStudent.gender || 'N/A'}</div>
-                    <div><strong>Date of Birth:</strong> {formatDate(selectedStudent.dateOfBirth)}</div>
-                    <div><strong>Status:</strong> 
-                      <Badge className="ml-2" variant={getStatusBadgeVariant(selectedStudent.status)}>
-                        {selectedStudent.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Contact Information
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-3 w-3" />
-                      {selectedStudent.email}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3 w-3" />
-                      {selectedStudent.phone || 'N/A'}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3 w-3" />
-                      {selectedStudent.address || 'N/A'}
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3">Academic Information</h3>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Department:</strong> {selectedStudent.department.name}</div>
-                    <div><strong>Department Code:</strong> {selectedStudent.department.code}</div>
-                    <div><strong>Current Level:</strong> {selectedStudent.currentLevel}</div>
-                    <div><strong>Enrollment Date:</strong> {formatDate(selectedStudent.enrollmentDate)}</div>
-                  </div>
-                </Card>
-
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3">Statistics</h3>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Course Registrations:</strong> {selectedStudent._count?.courseRegistrations || 0}</div>
-                    <div><strong>Exam Scores:</strong> {selectedStudent._count?.scores || 0}</div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Course Registrations */}
-              {selectedStudent.courseRegistrations && selectedStudent.courseRegistrations.length > 0 && (
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3">Registered Courses</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {selectedStudent.courseRegistrations.map((registration, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
-                        <span className="font-mono text-sm">{registration.course.code}</span>
-                        <span className="text-sm">{registration.course.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {/* Recent Scores */}
-              {selectedStudent.scores && selectedStudent.scores.length > 0 && (
-                <Card className="p-4">
-                  <h3 className="font-semibold mb-3">Recent Exam Scores</h3>
-                  <div className="space-y-2">
-                    {selectedStudent.scores.slice(0, 5).map((score, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
-                        <div>
-                          <span className="font-mono text-sm">{score.exam.course.code}</span>
-                          <span className="ml-2 text-sm">{score.exam.course.title}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge variant="outline">{score.score}%</Badge>
-                          <Badge variant={score.grade === 'A' ? 'default' : score.grade === 'F' ? 'destructive' : 'secondary'}>
-                            {score.grade}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <StudentDetailsModal
+        student={selectedStudent}
+        open={showStudentDetails}
+        onClose={() => setShowStudentDetails(false)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

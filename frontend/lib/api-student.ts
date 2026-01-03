@@ -361,10 +361,11 @@ export const paymentsApi = {
     return response.data;
   },
 
-  initializePayment: async (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
+  initializePayment: async (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE', amount?: number) => {
     const response = await studentApi.post('/payments/initialize', {
       invoiceId,
       method,
+      ...(amount && { amount }), // Include amount only if provided
     });
     return response.data;
   },

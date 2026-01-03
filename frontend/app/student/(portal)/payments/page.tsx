@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { paymentsApi, formatCurrency, downloadFile } from '@/lib/api-student';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   useInvoices, 
   usePaymentHistory, 
@@ -30,7 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { CreditCard, Wallet, Download, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { CreditCard, Wallet, Download, CheckCircle2, Clock, XCircle, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/lib/api-student';
 
@@ -47,6 +49,14 @@ interface Invoice {
   session: {
     name: string;
   };
+  // Payment Configuration
+  allowPartialPayment: boolean;
+  minimumPayment: number | null;
+  maximumInstallments: number | null;
+  enforceDeadline: boolean;
+  lateFeePercentage: number | null;
+  lateFeeAmount: number | null;
+  payments?: Array<{ status: string }>;
 }
 
 interface Payment {
@@ -64,6 +74,7 @@ interface Payment {
 
 export default function PaymentsPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('');
   const [loadingPayment, setLoadingPayment] = useState<{ invoiceId: number; method: string } | null>(null);
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -109,12 +120,60 @@ export default function PaymentsPage() {
   const loading = invoicesLoading || paymentsLoading || walletLoading;
 
   const handleInitiatePayment = (invoiceId: number, method: 'PAYSTACK' | 'FLUTTERWAVE') => {
+    const invoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
+    if (!invoice) return;
+
+    // Validate custom amount if partial payment
+    let paymentAmount: number | undefined;
+    if (customAmount) {
+      const amount = parseFloat(customAmount);
+      
+      if (isNaN(amount) || amount <= 0) {
+        toast({
+          title: 'Invalid Amount',
+          description: 'Please enter a valid payment amount',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!invoice.allowPartialPayment) {
+        toast({
+          title: 'Full Payment Required',
+          description: 'This invoice does not allow partial payments',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (invoice.minimumPayment && amount < invoice.minimumPayment) {
+        toast({
+          title: 'Amount Too Low',
+          description: `Minimum payment is ${formatCurrency(invoice.minimumPayment)}`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (amount > invoice.balance) {
+        toast({
+          title: 'Amount Too High',
+          description: 'Payment amount cannot exceed remaining balance',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      paymentAmount = amount;
+    }
+
     setLoadingPayment({ invoiceId, method });
     initializePaymentMutation.mutate(
-      { invoiceId, method },
+      { invoiceId, method, amount: paymentAmount },
       {
         onSettled: () => {
           setLoadingPayment(null);
+          setCustomAmount('');
         },
       }
     );
@@ -247,8 +306,54 @@ export default function PaymentsPage() {
                     )}
                   </div>
 
+                  {/* Payment Configuration Info */}
+                  {invoice.status !== 'PAID' && (
+                    <div className="border-t pt-4 space-y-2">
+                      {invoice.allowPartialPayment && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Info className="h-4 w-4" />
+                          <span>
+                            Partial payments allowed
+                            {invoice.minimumPayment && ` (minimum: ${formatCurrency(invoice.minimumPayment)})`}
+                            {invoice.maximumInstallments && ` - Max ${invoice.maximumInstallments} installments`}
+                          </span>
+                        </div>
+                      )}
+                      {!invoice.allowPartialPayment && (
+                        <div className="flex items-center gap-2 text-sm text-amber-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Full payment required</span>
+                        </div>
+                      )}
+                      {invoice.dueDate && new Date(invoice.dueDate) < new Date() && (
+                        <div className="flex items-center gap-2 text-sm text-red-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>
+                            Payment overdue
+                            {invoice.lateFeePercentage && ` - ${invoice.lateFeePercentage}% late fee applies`}
+                            {invoice.lateFeeAmount && ` - ${formatCurrency(invoice.lateFeeAmount)} late fee applies`}
+                          </span>
+                        </div>
+                      )}
+                      {invoice.payments && invoice.payments.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>{invoice.payments.filter(p => p.status === 'PAID').length} payment(s) made</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {invoice.status !== 'PAID' && invoice.balance > 0 && (
-                    <Dialog open={selectedInvoice?.id === invoice.id} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+                    <Dialog 
+                      open={selectedInvoice?.id === invoice.id} 
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          setSelectedInvoice(null);
+                          setCustomAmount('');
+                        }
+                      }}
+                    >
                       <DialogTrigger asChild>
                         <Button onClick={() => setSelectedInvoice(invoice)}>
                           <CreditCard className="h-4 w-4 mr-2" />
@@ -257,44 +362,89 @@ export default function PaymentsPage() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Choose Payment Method</DialogTitle>
+                          <DialogTitle>Make Payment</DialogTitle>
                           <DialogDescription>
-                            Select a payment method to pay {formatCurrency(invoice.balance)}
+                            {invoice.allowPartialPayment 
+                              ? 'Enter custom amount or pay full balance' 
+                              : `Full payment of ${formatCurrency(invoice.balance)} required`}
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-3 py-4">
-                          <Button
-                            className="w-full"
-                            onClick={() => handleInitiatePayment(invoice.id, 'PAYSTACK')}
-                            disabled={loadingPayment?.invoiceId === invoice.id}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'PAYSTACK' 
-                              ? 'Processing...' 
-                              : 'Pay with Paystack'}
-                          </Button>
-                          <Button
-                            className="w-full"
-                            variant="outline"
-                            onClick={() => handleInitiatePayment(invoice.id, 'FLUTTERWAVE')}
-                            disabled={loadingPayment?.invoiceId === invoice.id}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'FLUTTERWAVE' 
-                              ? 'Processing...' 
-                              : 'Pay with Flutterwave'}
-                          </Button>
-                          {walletBalance >= invoice.balance && (
+                        <div className="space-y-4 py-4">
+                          {/* Custom Amount Input for Partial Payments */}
+                          {invoice.allowPartialPayment && (
+                            <div className="space-y-2">
+                              <Label htmlFor="customAmount">Payment Amount (Optional)</Label>
+                              <Input
+                                id="customAmount"
+                                type="number"
+                                placeholder={`Min: ${invoice.minimumPayment ? formatCurrency(invoice.minimumPayment) : formatCurrency(0)}`}
+                                value={customAmount}
+                                onChange={(e) => setCustomAmount(e.target.value)}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Leave empty to pay full balance: {formatCurrency(invoice.balance)}
+                                {invoice.minimumPayment && ` (Minimum: ${formatCurrency(invoice.minimumPayment)})`}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Payment amount summary */}
+                          <div className="bg-muted p-3 rounded-lg">
+                            <div className="flex justify-between text-sm">
+                              <span>Amount to pay:</span>
+                              <span className="font-semibold">
+                                {customAmount ? formatCurrency(parseFloat(customAmount) || 0) : formatCurrency(invoice.balance)}
+                              </span>
+                            </div>
+                            {invoice.dueDate && new Date(invoice.dueDate) < new Date() && (
+                              <div className="flex justify-between text-sm mt-2 text-amber-600">
+                                <span>Late fee:</span>
+                                <span className="font-semibold">
+                                  {invoice.lateFeePercentage 
+                                    ? `${invoice.lateFeePercentage}% (${formatCurrency((invoice.amount * invoice.lateFeePercentage) / 100)})`
+                                    : invoice.lateFeeAmount 
+                                    ? formatCurrency(invoice.lateFeeAmount)
+                                    : 'None'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Payment Method Buttons */}
+                          <div className="space-y-3">
                             <Button
                               className="w-full"
-                              variant="secondary"
-                              onClick={() => handleWalletPayment(invoice.id)}
-                              disabled={payWithWalletMutation.isPending}
+                              onClick={() => handleInitiatePayment(invoice.id, 'PAYSTACK')}
+                              disabled={loadingPayment?.invoiceId === invoice.id}
                             >
-                              <Wallet className="h-4 w-4 mr-2" />
-                              {payWithWalletMutation.isPending ? 'Processing...' : 'Pay from Wallet'}
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'PAYSTACK' 
+                                ? 'Processing...' 
+                                : 'Pay with Paystack'}
                             </Button>
-                          )}
+                            <Button
+                              className="w-full"
+                              variant="outline"
+                              onClick={() => handleInitiatePayment(invoice.id, 'FLUTTERWAVE')}
+                              disabled={loadingPayment?.invoiceId === invoice.id}
+                            >
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              {loadingPayment?.invoiceId === invoice.id && loadingPayment?.method === 'FLUTTERWAVE' 
+                                ? 'Processing...' 
+                                : 'Pay with Flutterwave'}
+                            </Button>
+                            {walletBalance >= (customAmount ? parseFloat(customAmount) || invoice.balance : invoice.balance) && (
+                              <Button
+                                className="w-full"
+                                variant="secondary"
+                                onClick={() => handleWalletPayment(invoice.id)}
+                                disabled={payWithWalletMutation.isPending}
+                              >
+                                <Wallet className="h-4 w-4 mr-2" />
+                                {payWithWalletMutation.isPending ? 'Processing...' : 'Pay from Wallet'}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -307,7 +457,12 @@ export default function PaymentsPage() {
           {invoices.length === 0 && (
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No invoices available</p>
+              <p className="text-lg font-medium mb-2">No invoices available</p>
+              <p className="text-sm text-muted-foreground">
+                Invoices will appear here once they are generated by the administration.
+                <br />
+                Please contact the bursar's office if you believe this is an error.
+              </p>
             </div>
           )}
         </TabsContent>

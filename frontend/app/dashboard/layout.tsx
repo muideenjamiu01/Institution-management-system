@@ -55,6 +55,7 @@ export default function DashboardLayout({
     { name: 'Course Registration', href: '/dashboard/course-registration', icon: Calendar },
     { name: 'Exams', href: '/dashboard/exams', icon: GraduationCap },
     { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
+    { name: 'Sessions', href: '/dashboard/sessions', icon: Calendar },
   ];
 
   if (!user) {

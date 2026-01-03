@@ -285,8 +285,8 @@ export const useInitializePayment = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ invoiceId, method }: { invoiceId: number; method: 'PAYSTACK' | 'FLUTTERWAVE' }) =>
-      paymentsApi.initializePayment(invoiceId, method),
+    mutationFn: ({ invoiceId, method, amount }: { invoiceId: number; method: 'PAYSTACK' | 'FLUTTERWAVE'; amount?: number }) =>
+      paymentsApi.initializePayment(invoiceId, method, amount),
     onSuccess: (data) => {
       // Handle the nested response structure
       const authUrl = data.data?.authorization_url || data.authorization_url;

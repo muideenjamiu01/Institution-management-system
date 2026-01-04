@@ -31,6 +31,33 @@
     --chart-5: 27 87% 67%;
   }
 
+  /* Admin Portal - Blue Theme */
+  .admin-portal {
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 217 91% 60%;
+    --accent: 217 91% 95%;
+    --accent-foreground: 217 91% 30%;
+  }
+
+  /* Student Portal - Green Theme */
+  .student-portal {
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 142 76% 36%;
+    --accent: 142 76% 95%;
+    --accent-foreground: 142 76% 20%;
+  }
+
+  /* Applicant Portal - Purple Theme */
+  .applicant-portal {
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 262 83% 58%;
+    --accent: 262 83% 95%;
+    --accent-foreground: 262 83% 30%;
+  }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;

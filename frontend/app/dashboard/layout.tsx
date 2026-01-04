@@ -60,7 +60,7 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="admin-portal flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading...</p>
@@ -70,7 +70,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="admin-portal flex h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -81,14 +81,14 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r transform transition-transform duration-300 lg:translate-x-0 lg:static ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-blue-600 to-blue-700 border-r border-blue-800 transform transition-transform duration-300 lg:translate-x-0 lg:static ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b">
-            <h1 className="text-2xl font-bold text-primary">IMS</h1>
-            <p className="text-sm text-muted-foreground mt-1">Management System</p>
+          <div className="p-6 border-b border-blue-800">
+            <h1 className="text-2xl font-bold text-white">IMS Admin</h1>
+            <p className="text-sm text-blue-100 mt-1">Management System</p>
           </div>
 
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -96,7 +96,7 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
                 onClick={() => setSidebarOpen(false)}
               >
                 <item.icon className="h-5 w-5" />
@@ -105,16 +105,16 @@ export default function DashboardLayout({
             ))}
           </nav>
 
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-blue-800">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                <p className="text-xs text-muted-foreground">{user?.role}</p>
+                <p className="text-sm font-medium text-white">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-blue-200">{user?.role}</p>
               </div>
             </div>
             <Button
-              variant="outline"
-              className="w-full"
+              variant="ghost"
+              className="w-full text-white hover:bg-blue-800 hover:text-white"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-2" />

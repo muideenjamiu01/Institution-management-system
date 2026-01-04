@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import StudentProfilePicture from '@/components/StudentProfilePicture';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,9 +33,10 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
-  { name: 'Courses', href: '/student/courses', icon: BookOpen },
-  { name: 'Assignments', href: '/student/assignments', icon: ClipboardList },
-  { name: 'Results', href: '/student/results', icon: GraduationCap },
+  { name: 'Course Registration', href: '/student/course-registration', icon: BookOpen },
+  // { name: 'Courses', href: '/student/courses', icon: BookOpen },
+  // { name: 'Assignments', href: '/student/assignments', icon: ClipboardList },
+  // { name: 'Results', href: '/student/results', icon: GraduationCap },
   { name: 'Payments', href: '/student/payments', icon: CreditCard },
   { name: 'Documents', href: '/student/documents', icon: FileText },
 ];
@@ -71,21 +72,6 @@ export default function StudentLayout({
   const getInitials = () => {
     if (!student || !student.firstName || !student.lastName) return 'ST';
     return `${student.firstName[0]}${student.lastName[0]}`.toUpperCase();
-  };
-
-  const getProfilePictureUrl = () => {
-    if (!student?.profilePicture) return undefined;
-    
-    // If it's already a full URL, return as is
-    if (student.profilePicture.startsWith('http')) {
-      return student.profilePicture;
-    }
-    
-    // Otherwise, prepend the API base URL
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const fullUrl = `${baseUrl}${student.profilePicture}`;
-    console.log('Profile Picture URL (Layout):', fullUrl); // Debug log
-    return fullUrl;
   };
 
   return (
@@ -150,10 +136,12 @@ export default function StudentLayout({
           {/* User section */}
           <div className="p-4 border-t border-green-800">
             <div className="flex items-center space-x-3 px-3 py-2">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={getProfilePictureUrl()} />
-                <AvatarFallback className="bg-green-800 text-white">{getInitials()}</AvatarFallback>
-              </Avatar>
+              <StudentProfilePicture
+                firstName={student?.firstName}
+                lastName={student?.lastName}
+                profilePicture={student?.profilePicture}
+                size="md"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
                   {student?.firstName} {student?.lastName}
@@ -181,18 +169,22 @@ export default function StudentLayout({
           <div className="flex-1" />
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+            <Button variant="ghost" size="icon" className="relative" asChild>
+              <Link href="/student/notifications">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              </Link>
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={getProfilePictureUrl()} />
-                    <AvatarFallback>{getInitials()}</AvatarFallback>
-                  </Avatar>
+                  <StudentProfilePicture
+                    firstName={student?.firstName}
+                    lastName={student?.lastName}
+                    profilePicture={student?.profilePicture}
+                    size="sm"
+                  />
                   <span className="hidden md:inline text-sm">
                     {student?.firstName} {student?.lastName}
                   </span>

@@ -40,7 +40,7 @@ const applicationSchema = z.object({
   address: z.string().min(10, "Please provide a complete address"),
   previousSchool: z.string().min(3, "Previous school name is required"),
   gradeAverage: z.number().min(0).max(100, "Grade must be between 0 and 100"),
-  programType: z.enum(["HND", "BSC", "MSC", "PHD"], {
+  programType: z.enum(["BSC", "MSC", "PHD"], {
     required_error: "Program type is required",
   }),
   departmentId: z.number({ required_error: "Department is required" }).min(1),
@@ -65,7 +65,7 @@ interface Program {
 
 const PROGRAM_TYPE_LABELS: Record<string, string> = {
   // ND: 'National Diploma (ND)',
-  HND: "Higher National Diploma (HND)",
+  // HND: "Higher National Diploma (HND)",
   BSC: "Bachelor of Science (BSC)",
   MSC: "Master of Science (MSC)",
   PHD: "Doctor of Philosophy (PHD)",

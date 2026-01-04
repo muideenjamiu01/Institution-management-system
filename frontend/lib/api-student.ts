@@ -519,3 +519,62 @@ export const formatRelativeTime = (date: string | Date) => {
   if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
   return formatDate(date);
 };
+
+// Generic request helper for student API
+export const apiStudentRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getAccessToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
+
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // Remove leading slash from endpoint if present
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  // Only add /api if endpoint doesn't already start with it
+  const finalEndpoint = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : `${baseURL}/${finalEndpoint}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok && response.status === 401) {
+    // Handle token refresh or logout
+    clearTokens();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/student/login';
+    }
+  }
+
+  return response.json();
+};
+
+// ==================== SESSIONS AND SEMESTERS ====================
+export const sessionApi = {
+  // Get all active sessions
+  getActiveSessions: async () => {
+    const response = await studentApi.get('/sessions/active');
+    return response.data.data;
+  },
+
+  // Get all sessions
+  getAllSessions: async () => {
+    const response = await studentApi.get('/sessions');
+    return response.data.data || [];
+  },
+
+  // Get semesters for a specific session
+  getSessionSemesters: async (sessionId: number) => {
+    const response = await studentApi.get(`/sessions/${sessionId}/semesters`);
+    return response.data.data || [];
+  },
+
+  // Get active semester
+  getActiveSemester: async () => {
+    const response = await studentApi.get('/sessions/semesters/active');
+    return response.data.data;
+  },
+};

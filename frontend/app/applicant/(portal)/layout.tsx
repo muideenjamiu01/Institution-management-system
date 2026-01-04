@@ -50,7 +50,7 @@ export default function ApplicantPortalLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="applicant-portal min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -65,21 +65,21 @@ export default function ApplicantPortalLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="applicant-portal min-h-screen bg-gray-50">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-purple-600 to-purple-700 border-r border-purple-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-purple-800">
             <Link href="/applicant/dashboard" className="flex items-center space-x-2">
-              <div className="bg-purple-600 rounded p-1.5">
+              <div className="bg-purple-800 rounded p-1.5">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              <span className="font-bold text-lg">Applicant Portal</span>
+              <span className="font-bold text-lg text-white">Applicant Portal</span>
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -99,8 +99,8 @@ export default function ApplicantPortalLayout({
                   href={item.href}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-purple-50 text-purple-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-purple-800 text-white'
+                      : 'text-purple-100 hover:bg-purple-700 hover:text-white'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
@@ -112,7 +112,7 @@ export default function ApplicantPortalLayout({
           </nav>
 
           {/* User Profile Section */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-purple-800">
             <div className="flex items-center space-x-3">
               <ProfilePicture
                 firstName={applicant.firstName}
@@ -120,10 +120,10 @@ export default function ApplicantPortalLayout({
                 size="md"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-white truncate">
                   {applicant.firstName} {applicant.lastName}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{applicant.username}</p>
+                <p className="text-xs text-purple-200 truncate">{applicant.username}</p>
               </div>
             </div>
           </div>

@@ -58,7 +58,7 @@ export default function StudentLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="student-portal min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
@@ -89,7 +89,7 @@ export default function StudentLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="student-portal min-h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -101,23 +101,23 @@ export default function StudentLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
+          'fixed top-0 left-0 z-50 h-full w-64 bg-gradient-to-b from-green-600 to-green-700 border-r border-green-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-green-800">
             <div className="flex items-center space-x-2">
-              <div className="bg-primary rounded-lg p-2">
+              <div className="bg-green-800 rounded-lg p-2">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
-              <span className="font-bold text-lg">Student Portal</span>
+              <span className="font-bold text-lg text-white">Student Portal</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden text-white hover:bg-green-700"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -136,8 +136,8 @@ export default function StudentLayout({
                   className={cn(
                     'flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-green-800 text-white'
+                      : 'text-green-100 hover:bg-green-700 hover:text-white'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -148,17 +148,17 @@ export default function StudentLayout({
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-green-800">
             <div className="flex items-center space-x-3 px-3 py-2">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={getProfilePictureUrl()} />
-                <AvatarFallback>{getInitials()}</AvatarFallback>
+                <AvatarFallback className="bg-green-800 text-white">{getInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
+                <p className="text-sm font-medium text-white truncate">
                   {student?.firstName} {student?.lastName}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{student?.matricNo}</p>
+                <p className="text-xs text-green-200 truncate">{student?.matricNo}</p>
               </div>
             </div>
           </div>

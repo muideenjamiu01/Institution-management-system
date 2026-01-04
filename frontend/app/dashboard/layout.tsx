@@ -51,9 +51,10 @@ export default function DashboardLayout({
     { name: 'Admissions', href: '/dashboard/admissions', icon: ClipboardCheck },
     { name: 'Students', href: '/dashboard/students', icon: Users },
     { name: 'Departments', href: '/dashboard/departments', icon: Building2 },
-    { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
-    { name: 'Course Registration', href: '/dashboard/course-registration', icon: Calendar },
-    { name: 'Exams', href: '/dashboard/exams', icon: GraduationCap },
+    // { name: 'Courses', href: '/dashboard/courses', icon: BookOpen },
+    // { name: 'Course Registration', href: '/dashboard/course-registration', icon: Calendar },
+    { name: 'Course Management', href: '/dashboard/course-management', icon: BookOpen },
+    // { name: 'Exams', href: '/dashboard/exams', icon: GraduationCap },
     { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
     { name: 'Sessions', href: '/dashboard/sessions', icon: Calendar },
   ];

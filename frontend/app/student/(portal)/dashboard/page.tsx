@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useStudentAuth } from '@/lib/student-auth-context';
 import {
-  useDashboardStats,
+  useDashboardOverview,
   useDashboardActivities,
   useDashboardNotifications,
   useStudentProfile,
@@ -25,21 +26,55 @@ import Link from 'next/link';
 import { formatRelativeTime } from '@/lib/api-student';
 
 export default function StudentDashboard() {
-  const { student } = useStudentAuth();
-  const { data: profileData, refetch: refetchProfile } = useStudentProfile();
-  const { data: statsData, refetch: refetchStats, isRefetching: isRefetchingStats } = useDashboardStats();
+  const { student, updateStudent } = useStudentAuth();
+  const { data: overviewData, refetch: refetchOverview, isRefetching: isRefetchingOverview } = useDashboardOverview();
   const { data: activitiesData, refetch: refetchActivities } = useDashboardActivities();
   const { data: notificationsData, refetch: refetchNotifications } = useDashboardNotifications();
 
-  // Use profile data if available, otherwise fall back to auth context
-  const currentStudent = profileData?.data || student;
-  const stats = statsData?.data;
+  // Extract data from overview
+  const currentStudent = overviewData?.student || student;
+  const stats = overviewData?.stats;
+  const currentSession = overviewData?.session;
+  const currentSemester = overviewData?.currentSemester;
   const activities = activitiesData?.data || [];
   const notifications = (notificationsData?.data || []).slice(0, 5);
 
+  // Sync student data from overview to auth context
+  useEffect(() => {
+    if (overviewData?.student && student) {
+      const overviewStudent = overviewData.student;
+      
+      console.log('Overview student data:', overviewStudent);
+      console.log('Current auth student:', student);
+      console.log('Profile picture from overview:', overviewStudent.profilePicture);
+      console.log('Profile picture in auth:', student.profilePicture);
+      
+      // Always update to ensure we have the latest data from server
+      const shouldUpdate = 
+        overviewStudent.profilePicture !== student.profilePicture ||
+        overviewStudent.firstName !== student.firstName ||
+        overviewStudent.lastName !== student.lastName ||
+        overviewStudent.level !== student.currentLevel ||
+        overviewStudent.status !== student.status;
+      
+      if (shouldUpdate) {
+        console.log('Updating student data in auth context...');
+        updateStudent({
+          ...student,
+          profilePicture: overviewStudent.profilePicture,
+          firstName: overviewStudent.firstName,
+          lastName: overviewStudent.lastName,
+          currentLevel: overviewStudent.level,
+          status: overviewStudent.status,
+          email: overviewStudent.email,
+        });
+      }
+    }
+  }, [overviewData, student, updateStudent]);
+
+
   const handleRefresh = () => {
-    refetchProfile();
-    refetchStats();
+    refetchOverview();
     refetchActivities();
     refetchNotifications();
   };
@@ -69,10 +104,10 @@ export default function StudentDashboard() {
           variant="outline"
           size="sm"
           onClick={handleRefresh}
-          disabled={isRefetchingStats}
+          disabled={isRefetchingOverview}
           title="Refresh dashboard"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefetchingStats ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isRefetchingOverview ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
@@ -108,6 +143,45 @@ export default function StudentDashboard() {
         </Card>
       )}
 
+      {/* Current Session Information */}
+      {currentSession && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-blue-900 flex items-center">
+              <Clock className="h-5 w-5 mr-2" />
+              Current Academic Session
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-blue-700 font-medium mb-1">Session</p>
+                <p className="text-sm font-bold text-blue-900">{currentSession.name}</p>
+                {currentSession.isActive && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
+                    Active
+                  </span>
+                )}
+              </div>
+              {currentSemester && (
+                <>
+                  <div>
+                    <p className="text-xs text-blue-700 font-medium mb-1">Current Semester</p>
+                    <p className="text-sm font-bold text-blue-900">{currentSemester.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-700 font-medium mb-1">Period</p>
+                    <p className="text-sm text-blue-900">
+                      {new Date(currentSemester.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - {new Date(currentSemester.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -116,7 +190,7 @@ export default function StudentDashboard() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalCourses || 0}</div>
+            <div className="text-2xl font-bold">{stats?.registeredCourses || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Current semester courses
             </p>
@@ -138,15 +212,15 @@ export default function StudentDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Current GPA</CardTitle>
+            <CardTitle className="text-sm font-medium">CGPA</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.currentGPA ? stats.currentGPA.toFixed(2) : '0.00'}
+              {stats?.cgpa ? stats.cgpa.toFixed(2) : '0.00'}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Current semester
+              Cumulative GPA
             </p>
           </CardContent>
         </Card>
@@ -161,7 +235,7 @@ export default function StudentDashboard() {
               {formatCurrency(stats?.walletBalance || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats?.pendingPayments || 0} pending payment(s)
+              {stats?.unpaidInvoices || 0} unpaid invoice(s)
             </p>
           </CardContent>
         </Card>

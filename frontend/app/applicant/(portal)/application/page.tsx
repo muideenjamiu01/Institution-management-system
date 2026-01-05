@@ -109,7 +109,7 @@ export default function ApplicationFormPage() {
     const fetchDepartments = async () => {
       try {
         setLoadingDepartments(true);
-        const response = await api.get("/departments");
+        const response = await api.get("/departments/public");
         setDepartments(response.data.data || response.data);
       } catch (error) {
         console.error("Failed to fetch departments:", error);

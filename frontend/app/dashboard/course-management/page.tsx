@@ -51,7 +51,7 @@ import {
   Users,
 } from 'lucide-react';
 import courseApi, { Course, CourseRegistration } from '@/lib/api-course';
-import { sessionApi } from '@/lib/api-student';
+import { adminApi } from '@/lib/api-admin';
 import StatusBadge from '@/components/course/StatusBadge';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 
@@ -106,7 +106,7 @@ export default function AdminCourseManagementPage() {
   // Fetch sessions
   const { data: sessions = [] } = useQuery({
     queryKey: ['sessions'],
-    queryFn: sessionApi.getAllSessions,
+    queryFn: adminApi.getAllSessions,
   });
 
   // Fetch courses

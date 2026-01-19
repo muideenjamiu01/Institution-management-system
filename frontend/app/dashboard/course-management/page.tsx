@@ -778,6 +778,11 @@ export default function AdminCourseManagementPage() {
                             <div className="flex gap-2 mt-2">
                               <Badge>Level {registration.level}</Badge>
                               <Badge variant="secondary">{registration.totalUnits} Units</Badge>
+                              {registration.carryOverCourses && registration.carryOverCourses.length > 0 && (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300">
+                                  {registration.carryOverCourses.length} Carry Over
+                                </Badge>
+                              )}
                               <StatusBadge status={registration.status} />
                             </div>
                           </div>
@@ -1161,12 +1166,16 @@ export default function AdminCourseManagementPage() {
 
               <div>
                 <h4 className="font-semibold mb-2">Registered Courses</h4>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Normal Courses: {selectedRegistration.courses?.length || 0}
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Code</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Credits</TableHead>
+                      <TableHead>Type</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1177,11 +1186,56 @@ export default function AdminCourseManagementPage() {
                         <TableCell>
                           <Badge variant="secondary">{item.course?.credits}</Badge>
                         </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">Normal</Badge>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Carry Over Courses Section */}
+              {selectedRegistration.carryOverCourses && selectedRegistration.carryOverCourses.length > 0 && (
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <span className="text-amber-600">Carry Over Courses</span>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+                      {selectedRegistration.carryOverCourses.length}
+                    </Badge>
+                  </h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-amber-50">
+                        <TableHead>Code</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Credits</TableHead>
+                        <TableHead>Retake Type</TableHead>
+                        <TableHead>Attempts</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedRegistration.carryOverCourses.map((item: any) => (
+                        <TableRow key={item.id} className="bg-amber-50/50">
+                          <TableCell className="font-mono">{item.course?.code}</TableCell>
+                          <TableCell>{item.course?.title}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{item.course?.credits}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="border-amber-500 text-amber-700">
+                              {item.retakeType === 'EXAM_ONLY' ? 'Exam Only' : 'Full Course'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="destructive">{item.previousAttempts}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

@@ -243,6 +243,11 @@ export const courseApi = {
     return response.data;
   },
 
+  getCarryOverCourses: async () => {
+    const response = await studentApi.get('/courses/carry-over');
+    return response.data;
+  },
+
   getRegisteredCourses: async (params?: { sessionId?: number; semester?: number }) => {
     const response = await studentApi.get('/courses/registered', { params });
     return response.data;

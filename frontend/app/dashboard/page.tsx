@@ -98,22 +98,22 @@ export default function DashboardPage() {
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
     },
-    {
-      title: 'Total Invoices',
-      value: stats?.totalInvoices || 0,
-      icon: CreditCard,
-      description: 'All invoices',
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-    },
-    {
-      title: 'Paid Invoices',
-      value: stats?.paidInvoices || 0,
-      icon: CreditCard,
-      description: 'Completed payments',
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-50',
-    },
+    // {
+    //   title: 'Total Invoices',
+    //   value: stats?.totalInvoices || 0,
+    //   icon: CreditCard,
+    //   description: 'All invoices',
+    //   color: 'text-emerald-600',
+    //   bgColor: 'bg-emerald-50',
+    // },
+    // {
+    //   title: 'Paid Invoices',
+    //   value: stats?.paidInvoices || 0,
+    //   icon: CreditCard,
+    //   description: 'Completed payments',
+    //   color: 'text-teal-600',
+    //   bgColor: 'bg-teal-50',
+    // },
   ];
 
   if (isLoading) {

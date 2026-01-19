@@ -43,6 +43,14 @@ export interface CourseRegistration {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED';
   totalUnits: number;
   courses: CourseRegistrationItem[];
+  carryOverCourses?: Array<{
+    id: number;
+    courseId: number;
+    type: 'CARRY_OVER';
+    retakeType?: 'EXAM_ONLY' | 'FULL_COURSE';
+    previousAttempts: number;
+    course?: Course;
+  }>;
   comments?: string;
   submittedAt: string;
   approvedAt?: string;
@@ -168,6 +176,7 @@ export const courseApi = {
     semesterId: number;
     level: number;
     courseIds: number[];
+    carryOverCourses?: Array<{ courseId: number; retakeType: string }>;
   }): Promise<CourseRegistration> => {
     const response = await studentApi.post('/courses/register', data);
     return response.data.data;
